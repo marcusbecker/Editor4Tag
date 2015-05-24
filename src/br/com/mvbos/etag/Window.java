@@ -13,14 +13,20 @@ import br.com.mvbos.etag.core.Tag;
 import br.com.mvbos.etag.ui.LinePainter;
 import br.com.mvbos.etag.ui.MyDocumentListener;
 import br.com.mvbos.etag.ui.NonWrappingTextPane;
+import java.awt.Color;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
 import java.io.File;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
+import javax.swing.JTextPane;
 import javax.swing.Timer;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
+import javax.swing.text.Highlighter;
 import javax.swing.text.StyledDocument;
 
 /**
@@ -38,6 +44,9 @@ public class Window extends javax.swing.JFrame {
     private static Tag lastTag;
     private static Timer timer;
 
+    private int searchIndex;
+    private final DefaultHighlightPainter hPainter = new DefaultHighlightPainter(new Color(0xFFAA00));
+
     public Window() {
         initComponents();
         addTagButtons();
@@ -47,7 +56,7 @@ public class Window extends javax.swing.JFrame {
 
         docListener = new MyDocumentListener();
         text.getDocument().addDocumentListener(docListener);
-        
+
         LinePainter painter = new LinePainter(text);
 
         String recent = ConfigUtil.load("recent_file");
@@ -70,7 +79,7 @@ public class Window extends javax.swing.JFrame {
                             docListener.externalChange();
                         }
                     }
-                    
+
                     String title = tabbedPane.getTitleAt(sel);
 
                     if (docListener.isChange() && !title.startsWith("*")) {
@@ -173,6 +182,9 @@ public class Window extends javax.swing.JFrame {
         pn1 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
         text = new NonWrappingTextPane();
+        jPanel1 = new javax.swing.JPanel();
+        btnCloseSearch = new javax.swing.JButton();
+        tfSearch = new javax.swing.JTextField();
         fileMenu = new javax.swing.JMenuBar();
         menuFile = new javax.swing.JMenu();
         miNew = new javax.swing.JMenuItem();
@@ -203,7 +215,11 @@ public class Window extends javax.swing.JFrame {
         pnTag.add(btnAdd, new java.awt.GridBagConstraints());
 
         text.setFont(new java.awt.Font("Courier New", 0, 12)); // NOI18N
-        text.setText("Neste capítulo iremos criar a base para os jogos que serão desenvolvidos nos capítulos seguintes e a cada capítulo e jogo criado, aumentaremos nossa biblioteca de código. Começaremos criando um novo projeto no Eclipse, depois veremos código após código, como criar nosso protótipo de jogo, passando pelas etapas de desenho, animação e interação.");
+        text.addCaretListener(new javax.swing.event.CaretListener() {
+            public void caretUpdate(javax.swing.event.CaretEvent evt) {
+                textCaretUpdate(evt);
+            }
+        });
         text.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 textKeyReleased(evt);
@@ -215,14 +231,43 @@ public class Window extends javax.swing.JFrame {
         pn1.setLayout(pn1Layout);
         pn1Layout.setHorizontalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 690, Short.MAX_VALUE)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 858, Short.MAX_VALUE)
         );
         pn1Layout.setVerticalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 243, Short.MAX_VALUE)
+            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
         );
 
         tabbedPane.addTab("arquivo", pn1);
+
+        btnCloseSearch.setText("x");
+
+        tfSearch.addKeyListener(new java.awt.event.KeyAdapter() {
+            public void keyReleased(java.awt.event.KeyEvent evt) {
+                tfSearchKeyReleased(evt);
+            }
+        });
+
+        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
+        jPanel1.setLayout(jPanel1Layout);
+        jPanel1Layout.setHorizontalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addComponent(btnCloseSearch)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(tfSearch)
+                .addContainerGap())
+        );
+        jPanel1Layout.setVerticalGroup(
+            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(jPanel1Layout.createSequentialGroup()
+                .addContainerGap()
+                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(btnCloseSearch)
+                    .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
+        );
 
         menuFile.setText("File");
 
@@ -285,11 +330,14 @@ public class Window extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(pnTag, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(tabbedPane)
+            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(pnTag, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tabbedPane))
         );
@@ -312,7 +360,7 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
-        final JFileChooser fc = new JFileChooser();
+        final JFileChooser fc = new JFileChooser(FileUtil.selected);
         int returnVal = fc.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
             File file = fc.getSelectedFile();
@@ -377,12 +425,77 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_miRepeatActionPerformed
 
+    public void removeHighlights(JTextPane jtext) {
+        Highlighter hilite = jtext.getHighlighter();
+        Highlighter.Highlight[] hilites = hilite.getHighlights();
+        for (Highlighter.Highlight h : hilites) {
+            if (h.getPainter() instanceof DefaultHighlightPainter) {
+                hilite.removeHighlight(h);
+            }
+        }
+    }
+
+
+    private void tfSearchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tfSearchKeyReleased
+        String s = tfSearch.getText();
+        String t = text.getText();
+
+        if (s != null && !s.isEmpty()) {
+            if (evt.getKeyCode() == KeyEvent.VK_ENTER) {
+                searchIndex++;
+            }
+
+            int idx = t.indexOf(s, searchIndex);
+            if (idx > -1) {
+                text.select(idx, idx + s.length());
+                searchIndex = idx;
+            } else {
+                searchIndex = 0;
+            }
+        }
+
+    }//GEN-LAST:event_tfSearchKeyReleased
+
+
+    private void textCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textCaretUpdate
+
+        if (evt.getDot() == evt.getMark()) {
+            return;
+        }
+
+        String sel = text.getSelectedText();
+        Highlighter hilite = text.getHighlighter();
+
+        hilite.removeAllHighlights();
+
+        if (sel == null || sel.trim().isEmpty()) {
+            return;
+        }
+
+        try {
+
+            String t = text.getText();
+            int pos = 0;
+
+            while ((pos = t.indexOf(sel, pos)) > -1) {
+                hilite.addHighlight(pos, pos + sel.length(), hPainter);
+                pos += sel.length();
+            }
+
+        } catch (BadLocationException e) {
+        }
+
+
+    }//GEN-LAST:event_textCaretUpdate
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
+    private javax.swing.JButton btnCloseSearch;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
+    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JMenu menuFile;
@@ -394,5 +507,6 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPanel pnTag;
     private javax.swing.JTabbedPane tabbedPane;
     private javax.swing.JTextPane text;
+    private javax.swing.JTextField tfSearch;
     // End of variables declaration//GEN-END:variables
 }

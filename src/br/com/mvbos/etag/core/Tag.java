@@ -32,6 +32,8 @@ public class Tag implements Comparable<Tag>, Serializable {
         arr.add(new Tag(id++, "[list 1]", "[list number]\r\n* @;\r\n[/list]", true));
         arr.add(new Tag(id++, "[list A]", "[list letter]\r\n* @;\r\n[/list]", true));
         arr.add(new Tag(id++, "[list •]", "[list]\r\n* @;\r\n[/list]", true));
+        
+        arr.add(new Tag(id++, "[box]", "[box Dica:]\r\n@\r\n[/box]"));
 
         //arr.add(new Tag(1, "[code]", "[code]@[code]"));
         return arr;
