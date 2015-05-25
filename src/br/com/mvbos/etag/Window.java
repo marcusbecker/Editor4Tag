@@ -10,10 +10,8 @@ import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
 import br.com.mvbos.etag.core.Tag;
-import br.com.mvbos.etag.ui.LinePainter;
 import br.com.mvbos.etag.ui.MyDocumentListener;
-import br.com.mvbos.etag.ui.NonWrappingTextPane;
-import java.awt.Color;
+import br.com.mvbos.etag.ui.EtagTextPane;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -45,7 +43,6 @@ public class Window extends javax.swing.JFrame {
     private static Timer timer;
 
     private int searchIndex;
-    private final DefaultHighlightPainter hPainter = new DefaultHighlightPainter(new Color(0xFFAA00));
 
     public Window() {
         initComponents();
@@ -56,8 +53,6 @@ public class Window extends javax.swing.JFrame {
 
         docListener = new MyDocumentListener();
         text.getDocument().addDocumentListener(docListener);
-
-        LinePainter painter = new LinePainter(text);
 
         String recent = ConfigUtil.load("recent_file");
         if (recent != null) {
@@ -181,8 +176,8 @@ public class Window extends javax.swing.JFrame {
         tabbedPane = new javax.swing.JTabbedPane();
         pn1 = new javax.swing.JPanel();
         jScrollPane2 = new javax.swing.JScrollPane();
-        text = new NonWrappingTextPane();
-        jPanel1 = new javax.swing.JPanel();
+        text = new br.com.mvbos.etag.ui.EtagTextPane();
+        pnSearch = new javax.swing.JPanel();
         btnCloseSearch = new javax.swing.JButton();
         tfSearch = new javax.swing.JTextField();
         fileMenu = new javax.swing.JMenuBar();
@@ -192,6 +187,7 @@ public class Window extends javax.swing.JFrame {
         miSave = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         editMenu = new javax.swing.JMenu();
+        miFind = new javax.swing.JMenuItem();
         miRepeat = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
 
@@ -241,6 +237,11 @@ public class Window extends javax.swing.JFrame {
         tabbedPane.addTab("arquivo", pn1);
 
         btnCloseSearch.setText("x");
+        btnCloseSearch.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnCloseSearchActionPerformed(evt);
+            }
+        });
 
         tfSearch.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
@@ -248,22 +249,22 @@ public class Window extends javax.swing.JFrame {
             }
         });
 
-        javax.swing.GroupLayout jPanel1Layout = new javax.swing.GroupLayout(jPanel1);
-        jPanel1.setLayout(jPanel1Layout);
-        jPanel1Layout.setHorizontalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        javax.swing.GroupLayout pnSearchLayout = new javax.swing.GroupLayout(pnSearch);
+        pnSearch.setLayout(pnSearchLayout);
+        pnSearchLayout.setHorizontalGroup(
+            pnSearchLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnSearchLayout.createSequentialGroup()
                 .addContainerGap()
                 .addComponent(btnCloseSearch)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tfSearch)
                 .addContainerGap())
         );
-        jPanel1Layout.setVerticalGroup(
-            jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addGroup(jPanel1Layout.createSequentialGroup()
+        pnSearchLayout.setVerticalGroup(
+            pnSearchLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
+            .addGroup(pnSearchLayout.createSequentialGroup()
                 .addContainerGap()
-                .addGroup(jPanel1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                .addGroup(pnSearchLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCloseSearch)
                     .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
@@ -303,6 +304,15 @@ public class Window extends javax.swing.JFrame {
 
         editMenu.setText("Edit");
 
+        miFind.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
+        miFind.setText("Find");
+        miFind.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miFindActionPerformed(evt);
+            }
+        });
+        editMenu.add(miFind);
+
         miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         miRepeat.setText("Repeat tag");
         miRepeat.addActionListener(new java.awt.event.ActionListener() {
@@ -330,14 +340,14 @@ public class Window extends javax.swing.JFrame {
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addComponent(pnTag, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(tabbedPane)
-            .addComponent(jPanel1, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(pnSearch, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
             .addGroup(layout.createSequentialGroup()
                 .addComponent(pnTag, javax.swing.GroupLayout.PREFERRED_SIZE, 37, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(jPanel1, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addComponent(pnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tabbedPane))
         );
@@ -474,11 +484,11 @@ public class Window extends javax.swing.JFrame {
 
         try {
 
-            String t = text.getText();
             int pos = 0;
+            String t = text.getText();
 
             while ((pos = t.indexOf(sel, pos)) > -1) {
-                hilite.addHighlight(pos, pos + sel.length(), hPainter);
+                hilite.addHighlight(pos, pos + sel.length(), EtagTextPane.hPainter);
                 pos += sel.length();
             }
 
@@ -488,6 +498,20 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_textCaretUpdate
 
+    private void miFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miFindActionPerformed
+        pnSearch.setVisible(true);
+        tfSearch.requestFocus();
+        if (text.getSelectedText() != null && !text.getSelectedText().trim().isEmpty()) {
+            tfSearch.setText(text.getSelectedText());
+        }
+
+    }//GEN-LAST:event_miFindActionPerformed
+
+    private void btnCloseSearchActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnCloseSearchActionPerformed
+        pnSearch.setVisible(false);
+        tfSearch.setText(null);
+    }//GEN-LAST:event_btnCloseSearchActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -495,15 +519,16 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JPanel jPanel1;
     private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JMenu menuFile;
+    private javax.swing.JMenuItem miFind;
     private javax.swing.JMenuItem miNew;
     private javax.swing.JMenuItem miOpen;
     private javax.swing.JMenuItem miRepeat;
     private javax.swing.JMenuItem miSave;
     private javax.swing.JPanel pn1;
+    private javax.swing.JPanel pnSearch;
     private javax.swing.JPanel pnTag;
     private javax.swing.JTabbedPane tabbedPane;
     private javax.swing.JTextPane text;

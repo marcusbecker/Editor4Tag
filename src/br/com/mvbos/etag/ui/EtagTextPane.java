@@ -5,21 +5,27 @@
  */
 package br.com.mvbos.etag.ui;
 
+import java.awt.Color;
 import java.awt.Component;
 import javax.swing.JTextPane;
+import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.StyledDocument;
 
 /**
  *
  * @author Marcus Becker
  */
-public class NonWrappingTextPane extends JTextPane {
+public class EtagTextPane extends JTextPane {
 
-    public NonWrappingTextPane() {
+    public static final DefaultHighlighter.DefaultHighlightPainter hPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(57, 105, 138));
+    public static final DefaultHighlighter.DefaultHighlightPainter findPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(65, 25, 85));
+    public final LinePainter painter = new LinePainter(this);
+    
+    public EtagTextPane() {
         super();
     }
 
-    public NonWrappingTextPane(StyledDocument doc) {
+    public EtagTextPane(StyledDocument doc) {
         super(doc);
     }
 
