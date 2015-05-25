@@ -10,8 +10,8 @@ import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
 import br.com.mvbos.etag.core.Tag;
-import br.com.mvbos.etag.ui.MyDocumentListener;
 import br.com.mvbos.etag.ui.EtagTextPane;
+import br.com.mvbos.etag.ui.MyDocumentListener;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
@@ -37,6 +37,7 @@ public class Window extends javax.swing.JFrame {
      * Creates new form Window
      */
     private StyledDocument doc;
+    //TODO tranferir para EtagTextPane
     private MyDocumentListener docListener;
 
     private static Tag lastTag;
@@ -125,7 +126,8 @@ public class Window extends javax.swing.JFrame {
 
     private void loadTextFromFile(File file) {
         if (FileUtil.isValid(file)) {
-            text.setText(FileUtil.read(file));
+            //text.setText(FileUtil.read(file));
+            ((EtagTextPane) text).setNewText(FileUtil.read(file));
             StyleUtil.update(doc, text);
 
             int sel = tabbedPane.getSelectedIndex();
@@ -282,7 +284,7 @@ public class Window extends javax.swing.JFrame {
         menuFile.add(miNew);
 
         miOpen.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_O, java.awt.event.InputEvent.CTRL_MASK));
-        miOpen.setText("Open");
+        miOpen.setText("Open...");
         miOpen.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 miOpenActionPerformed(evt);
@@ -370,11 +372,22 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
+
+        //TODO remover ao trabalhar com muitos arquivos
+        if (docListener.isChange()) {
+            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (res == JOptionPane.YES_OPTION) {
+                saveFile();
+            } else if (res == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
+
         final JFileChooser fc = new JFileChooser(FileUtil.selected);
         int returnVal = fc.showOpenDialog(this);
         if (returnVal == JFileChooser.APPROVE_OPTION) {
+            docListener.setChange(false);
             File file = fc.getSelectedFile();
-
             loadTextFromFile(file);
         }
 
@@ -389,8 +402,20 @@ public class Window extends javax.swing.JFrame {
 
     private void miNewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miNewActionPerformed
 
-        FileUtil.selected = null;
+        //TODO remover ao trabalhar com muitos arquivos
+        if (docListener.isChange()) {
+            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (res == JOptionPane.YES_OPTION) {
+                saveFile();
+            } else if (res == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
 
+        FileUtil.selected = null;
+        docListener.setChange(false);
+
+        //TODO resetar
         text.setText(null);
         int sel = tabbedPane.getSelectedIndex();
         tabbedPane.setTitleAt(sel, "New file.txt");
