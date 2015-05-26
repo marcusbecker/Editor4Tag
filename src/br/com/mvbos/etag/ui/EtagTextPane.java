@@ -30,7 +30,7 @@ import javax.swing.undo.UndoManager;
 public class EtagTextPane extends JTextPane {
 
     public static final DefaultHighlighter.DefaultHighlightPainter hPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(57, 105, 138));
-    public static final DefaultHighlighter.DefaultHighlightPainter findPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(65, 25, 85));
+    public static final DefaultHighlighter.DefaultHighlightPainter findPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.LIGHT_GRAY); //new DefaultHighlighter.DefaultHighlightPainter(new Color(65, 25, 85));
     public final LinePainter painter = new LinePainter(this);
 
     public static final String UNDO_ACTION = "UNDO_ACTION";
@@ -40,7 +40,6 @@ public class EtagTextPane extends JTextPane {
 
     public EtagTextPane() {
         super();
-
         addUndoRedo();
     }
 

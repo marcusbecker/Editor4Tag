@@ -10,6 +10,7 @@ import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
 import br.com.mvbos.etag.core.Tag;
+import br.com.mvbos.etag.core.TagUtil;
 import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.MyDocumentListener;
 import java.awt.HeadlessException;
@@ -92,7 +93,7 @@ public class Window extends javax.swing.JFrame {
     }
 
     private void addTagButtons() {
-        for (final Tag t : Tag.list()) {
+        for (final Tag t : TagUtil.list()) {
             JButton btn = new JButton(t.getText());
 
             btn.addActionListener(new java.awt.event.ActionListener() {
@@ -103,7 +104,7 @@ public class Window extends javax.swing.JFrame {
                     if (sel == null) {
                         int st = text.getCaret().getDot();
                         int stCode = t.getCode().indexOf(Tag.MARK);
-                        String code = Tag.blankMark(t);
+                        String code = TagUtil.blankMark(t);
 
                         text.replaceSelection(code);
                         text.setSelectionStart(st + stCode);
@@ -111,7 +112,7 @@ public class Window extends javax.swing.JFrame {
 
                         //System.out.println();
                     } else {
-                        String res = Tag.process(t, sel);
+                        String res = TagUtil.process(t, sel);
                         text.replaceSelection(res);
                     }
 
@@ -177,7 +178,7 @@ public class Window extends javax.swing.JFrame {
         btnAdd = new javax.swing.JButton();
         tabbedPane = new javax.swing.JTabbedPane();
         pn1 = new javax.swing.JPanel();
-        jScrollPane2 = new javax.swing.JScrollPane();
+        spText = new javax.swing.JScrollPane();
         text = new br.com.mvbos.etag.ui.EtagTextPane();
         pnSearch = new javax.swing.JPanel();
         btnCloseSearch = new javax.swing.JButton();
@@ -223,17 +224,17 @@ public class Window extends javax.swing.JFrame {
                 textKeyReleased(evt);
             }
         });
-        jScrollPane2.setViewportView(text);
+        spText.setViewportView(text);
 
         javax.swing.GroupLayout pn1Layout = new javax.swing.GroupLayout(pn1);
         pn1.setLayout(pn1Layout);
         pn1Layout.setHorizontalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 858, Short.MAX_VALUE)
+            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 858, Short.MAX_VALUE)
         );
         pn1Layout.setVerticalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(jScrollPane2, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
+            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
         );
 
         tabbedPane.addTab("arquivo", pn1);
@@ -450,7 +451,7 @@ public class Window extends javax.swing.JFrame {
             String sel = text.getSelectedText();
 
             if (sel != null) {
-                String res = Tag.process(lastTag, sel);
+                String res = TagUtil.process(lastTag, sel);
                 text.replaceSelection(res);
                 StyleUtil.update(doc, text);
                 //text.requestFocus();
@@ -498,6 +499,7 @@ public class Window extends javax.swing.JFrame {
             return;
         }
 
+        int start = text.getSelectionStart();
         String sel = text.getSelectedText();
         Highlighter hilite = text.getHighlighter();
 
@@ -513,7 +515,7 @@ public class Window extends javax.swing.JFrame {
             String t = text.getText();
 
             while ((pos = t.indexOf(sel, pos)) > -1) {
-                hilite.addHighlight(pos, pos + sel.length(), EtagTextPane.hPainter);
+                hilite.addHighlight(pos, pos + sel.length(), start == pos ? EtagTextPane.findPainter : EtagTextPane.hPainter);
                 pos += sel.length();
             }
 
@@ -544,7 +546,6 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JScrollPane jScrollPane2;
     private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JMenu menuFile;
     private javax.swing.JMenuItem miFind;
@@ -555,6 +556,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPanel pn1;
     private javax.swing.JPanel pnSearch;
     private javax.swing.JPanel pnTag;
+    private javax.swing.JScrollPane spText;
     private javax.swing.JTabbedPane tabbedPane;
     private javax.swing.JTextPane text;
     private javax.swing.JTextField tfSearch;

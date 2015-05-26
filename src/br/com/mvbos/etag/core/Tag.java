@@ -5,69 +5,37 @@
  */
 package br.com.mvbos.etag.core;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
+import javax.xml.bind.JAXBContext;
+import javax.xml.bind.JAXBException;
+import javax.xml.bind.Marshaller;
+import javax.xml.bind.Unmarshaller;
+import javax.xml.bind.annotation.XmlAccessType;
+import javax.xml.bind.annotation.XmlAccessorType;
+import javax.xml.bind.annotation.XmlElement;
+import javax.xml.bind.annotation.XmlRootElement;
 
 /**
  *
  * @author Marcus Becker
  */
+@XmlRootElement(name = "tag")
+@XmlAccessorType(XmlAccessType.FIELD)
 public class Tag implements Comparable<Tag>, Serializable {
 
     public static String MARK = "@";
 
-    public static Iterable<Tag> list() {
-        List<Tag> arr = new ArrayList<>(10);
-        int id = 1;
-        arr.add(new Tag(id++, "[chap]", "[chapter @]"));
-        arr.add(new Tag(id++, "[sect]", "[section @]"));
-        arr.add(new Tag(id++, "code", "%%@%%"));
-        arr.add(new Tag(id++, "i", "::@::"));
-        arr.add(new Tag(id++, "n", "**@**"));
-        arr.add(new Tag(id++, "[lbl]", "[label @]"));
-        arr.add(new Tag(id++, "[img]", "[img resources/cap02/@ w=100% \"@\"]"));
-        arr.add(new Tag(id++, "[code java]", "[code java]\r\n@\r\n[/code]"));
-
-        arr.add(new Tag(id++, "[list 1]", "[list number]\r\n* @;\r\n[/list]", true));
-        arr.add(new Tag(id++, "[list A]", "[list letter]\r\n* @;\r\n[/list]", true));
-        arr.add(new Tag(id++, "[list •]", "[list]\r\n* @;\r\n[/list]", true));
-        
-        arr.add(new Tag(id++, "[box]", "[box Dica:]\r\n@\r\n[/box]"));
-
-        //arr.add(new Tag(1, "[code]", "[code]@[code]"));
-        return arr;
-    }
-
-    public static String process(Tag t, String text) {
-        String res;
-
-        if (t.breakLine) {
-            String[] code = t.getCode().split("\n");
-            String[] lines = text.split("\n");
-            String temp = "";
-            String tCode = code[0] + "\n" + MARK + code[2];
-            
-            for (String s : lines) {
-                temp += code[1].replaceAll(MARK, s) + "\n";
-            }
-
-            res = tCode.replaceAll(MARK, temp);
-
-        } else {
-            res = t.getCode().replaceAll(MARK, text);
-        }
-
-        return res;
-    }
-
-    public static String blankMark(Tag t) {
-        return t.getCode().replaceAll(MARK, " ");
-    }
 
     private int id;
+
+    @XmlElement
     private String code;
+    @XmlElement
     private String text;
+    @XmlElement
     private boolean breakLine;
 
     public Tag() {
@@ -140,6 +108,11 @@ public class Tag implements Comparable<Tag>, Serializable {
     @Override
     public int compareTo(Tag t) {
         return Integer.compare(this.getId(), t.getId());
+    }
+
+    @Override
+    public String toString() {
+        return "Tag{" + "id=" + id + ", code=" + code + ", text=" + text + ", breakLine=" + breakLine + '}';
     }
 
 }
