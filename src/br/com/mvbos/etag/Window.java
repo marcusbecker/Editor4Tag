@@ -12,12 +12,15 @@ import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
 import br.com.mvbos.etag.core.Tag;
 import br.com.mvbos.etag.core.TagUtil;
 import br.com.mvbos.etag.ui.EtagTextPane;
+import br.com.mvbos.etag.ui.GoLine;
 import br.com.mvbos.etag.ui.MyDocumentListener;
 import java.awt.HeadlessException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
 import java.io.File;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JOptionPane;
@@ -27,6 +30,7 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.Utilities;
 
 /**
  *
@@ -45,6 +49,8 @@ public class Window extends javax.swing.JFrame {
     private static Timer timer;
 
     private int searchIndex;
+
+    private GoLine goLine;
 
     public Window() {
         initComponents();
@@ -129,6 +135,7 @@ public class Window extends javax.swing.JFrame {
         if (FileUtil.isValid(file)) {
             //text.setText(FileUtil.read(file));
             ((EtagTextPane) text).setNewText(FileUtil.read(file));
+            text.getCaret().setDot(0);
             StyleUtil.update(doc, text);
 
             int sel = tabbedPane.getSelectedIndex();
@@ -183,6 +190,7 @@ public class Window extends javax.swing.JFrame {
         pnSearch = new javax.swing.JPanel();
         btnCloseSearch = new javax.swing.JButton();
         tfSearch = new javax.swing.JTextField();
+        lblInfo = new javax.swing.JLabel();
         fileMenu = new javax.swing.JMenuBar();
         menuFile = new javax.swing.JMenu();
         miNew = new javax.swing.JMenuItem();
@@ -192,6 +200,7 @@ public class Window extends javax.swing.JFrame {
         editMenu = new javax.swing.JMenu();
         miFind = new javax.swing.JMenuItem();
         miRepeat = new javax.swing.JMenuItem();
+        miGoLine = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -234,7 +243,7 @@ public class Window extends javax.swing.JFrame {
         );
         pn1Layout.setVerticalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 402, Short.MAX_VALUE)
+            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE)
         );
 
         tabbedPane.addTab("arquivo", pn1);
@@ -272,6 +281,8 @@ public class Window extends javax.swing.JFrame {
                     .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
+
+        lblInfo.setText("-");
 
         menuFile.setText("File");
 
@@ -325,6 +336,15 @@ public class Window extends javax.swing.JFrame {
         });
         editMenu.add(miRepeat);
 
+        miGoLine.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_L, java.awt.event.InputEvent.CTRL_MASK));
+        miGoLine.setText("Go...");
+        miGoLine.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miGoLineActionPerformed(evt);
+            }
+        });
+        editMenu.add(miGoLine);
+
         jMenuItem1.setText("to URL");
         jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -344,6 +364,7 @@ public class Window extends javax.swing.JFrame {
             .addComponent(pnTag, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(tabbedPane)
             .addComponent(pnSearch, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addComponent(lblInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -352,7 +373,9 @@ public class Window extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(pnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tabbedPane))
+                .addComponent(tabbedPane)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(lblInfo))
         );
 
         pack();
@@ -495,6 +518,25 @@ public class Window extends javax.swing.JFrame {
 
     private void textCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textCaretUpdate
 
+        int caretPos = text.getCaretPosition();
+        int colNum = 0;
+        int rowNum = (caretPos == 0) ? 1 : 0;
+
+        try {
+            int offset = Utilities.getRowStart(text, caretPos);
+            colNum = caretPos - offset + 1;
+
+            for (offset = caretPos; offset > 0;) {
+                offset = Utilities.getRowStart(text, offset) - 1;
+                rowNum++;
+            }
+
+        } catch (BadLocationException ex) {
+            Logger.getLogger(Window.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        lblInfo.setText("Line: " + rowNum + " | Column: " + colNum);
+
         if (evt.getDot() == evt.getMark()) {
             return;
         }
@@ -539,6 +581,16 @@ public class Window extends javax.swing.JFrame {
         tfSearch.setText(null);
     }//GEN-LAST:event_btnCloseSearchActionPerformed
 
+    private void miGoLineActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miGoLineActionPerformed
+        if (goLine == null) {
+            goLine = new GoLine(this, false, text);
+        }
+
+        goLine.setLocationRelativeTo(this);
+        goLine.setVisible(true);
+
+    }//GEN-LAST:event_miGoLineActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -547,8 +599,10 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JLabel lblInfo;
     private javax.swing.JMenu menuFile;
     private javax.swing.JMenuItem miFind;
+    private javax.swing.JMenuItem miGoLine;
     private javax.swing.JMenuItem miNew;
     private javax.swing.JMenuItem miOpen;
     private javax.swing.JMenuItem miRepeat;
