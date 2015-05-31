@@ -5,14 +5,7 @@
  */
 package br.com.mvbos.etag.core;
 
-import java.io.File;
 import java.io.Serializable;
-import java.util.ArrayList;
-import java.util.List;
-import javax.xml.bind.JAXBContext;
-import javax.xml.bind.JAXBException;
-import javax.xml.bind.Marshaller;
-import javax.xml.bind.Unmarshaller;
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlElement;
@@ -28,7 +21,6 @@ public class Tag implements Comparable<Tag>, Serializable {
 
     public static String MARK = "@";
 
-
     private int id;
 
     @XmlElement
@@ -37,6 +29,9 @@ public class Tag implements Comparable<Tag>, Serializable {
     private String text;
     @XmlElement
     private boolean breakLine;
+
+    @XmlElement
+    private String acceptPaste;
 
     public Tag() {
     }
@@ -84,6 +79,14 @@ public class Tag implements Comparable<Tag>, Serializable {
         this.breakLine = breakLine;
     }
 
+    public String getAcceptPaste() {
+        return acceptPaste;
+    }
+
+    public void setAcceptPaste(String acceptPaste) {
+        this.acceptPaste = acceptPaste;
+    }
+
     @Override
     public int hashCode() {
         int hash = 5;
@@ -113,6 +116,14 @@ public class Tag implements Comparable<Tag>, Serializable {
     @Override
     public String toString() {
         return "Tag{" + "id=" + id + ", code=" + code + ", text=" + text + ", breakLine=" + breakLine + '}';
+    }
+
+    public boolean acceptPaste(String ext) {
+        if (getAcceptPaste() == null || getAcceptPaste().isEmpty()) {
+            return false;
+        }
+
+        return getAcceptPaste().toLowerCase().contains(ext);
     }
 
 }

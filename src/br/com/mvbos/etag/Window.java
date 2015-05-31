@@ -15,10 +15,17 @@ import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.GoLine;
 import br.com.mvbos.etag.ui.MyDocumentListener;
 import java.awt.HeadlessException;
+import java.awt.Toolkit;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
+import java.awt.image.BufferedImage;
 import java.io.File;
+import java.io.IOException;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
@@ -52,9 +59,13 @@ public class Window extends javax.swing.JFrame {
 
     private GoLine goLine;
 
+    private final Clipboard clipboard;
+
     public Window() {
         initComponents();
         addTagButtons();
+
+        clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
         doc = text.getStyledDocument();
         addStylesToDocument(doc);
@@ -198,9 +209,12 @@ public class Window extends javax.swing.JFrame {
         miSave = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
         editMenu = new javax.swing.JMenu();
+        miPaste = new javax.swing.JMenuItem();
+        jSeparator2 = new javax.swing.JPopupMenu.Separator();
         miFind = new javax.swing.JMenuItem();
-        miRepeat = new javax.swing.JMenuItem();
         miGoLine = new javax.swing.JMenuItem();
+        jSeparator3 = new javax.swing.JPopupMenu.Separator();
+        miRepeat = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -318,6 +332,16 @@ public class Window extends javax.swing.JFrame {
 
         editMenu.setText("Edit");
 
+        miPaste.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_V, java.awt.event.InputEvent.CTRL_MASK));
+        miPaste.setText("Paste");
+        miPaste.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miPasteActionPerformed(evt);
+            }
+        });
+        editMenu.add(miPaste);
+        editMenu.add(jSeparator2);
+
         miFind.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
         miFind.setText("Find");
         miFind.addActionListener(new java.awt.event.ActionListener() {
@@ -327,15 +351,6 @@ public class Window extends javax.swing.JFrame {
         });
         editMenu.add(miFind);
 
-        miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
-        miRepeat.setText("Repeat tag");
-        miRepeat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                miRepeatActionPerformed(evt);
-            }
-        });
-        editMenu.add(miRepeat);
-
         miGoLine.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_L, java.awt.event.InputEvent.CTRL_MASK));
         miGoLine.setText("Go...");
         miGoLine.addActionListener(new java.awt.event.ActionListener() {
@@ -344,6 +359,16 @@ public class Window extends javax.swing.JFrame {
             }
         });
         editMenu.add(miGoLine);
+        editMenu.add(jSeparator3);
+
+        miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
+        miRepeat.setText("Repeat tag");
+        miRepeat.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miRepeatActionPerformed(evt);
+            }
+        });
+        editMenu.add(miRepeat);
 
         jMenuItem1.setText("to URL");
         jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
@@ -591,6 +616,45 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_miGoLineActionPerformed
 
+    private void miPasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPasteActionPerformed
+        try {
+            if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
+                //taResult.append(clipboard.getData(DataFlavor.stringFlavor).toString());
+                System.out.println("text");
+
+            } else if (clipboard.isDataFlavorAvailable(DataFlavor.javaFileListFlavor)) {
+                List<File> files = (List<File>) clipboard.getData(DataFlavor.javaFileListFlavor);
+                StringBuilder sb = new StringBuilder();
+
+                for (File f : files) {
+                    if (f.isDirectory()) {
+                        continue;
+                    }
+
+                    String ext = f.getName().substring(f.getName().lastIndexOf("."));
+                    ext = ext.toLowerCase();
+
+                    for (Tag t : TagUtil.cache.getTags()) {
+                        if (t.acceptPaste(ext)) {
+                            sb.append(TagUtil.process(t, f.getName()));
+                        }
+                    }
+                }
+
+                if (sb.length() > 0) {
+                    text.getDocument().insertString(text.getCaret().getDot(), sb.toString(), null);
+                    StyleUtil.update(doc, text);
+                }
+
+            } else if (clipboard.isDataFlavorAvailable(java.awt.datatransfer.DataFlavor.imageFlavor)) {
+                //pasteImage((BufferedImage) clipboard.getData(DataFlavor.imageFlavor));
+            }
+
+        } catch (UnsupportedFlavorException | IOException | BadLocationException ufe) {
+            Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ufe);
+        }
+    }//GEN-LAST:event_miPasteActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -599,12 +663,15 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPopupMenu.Separator jSeparator1;
+    private javax.swing.JPopupMenu.Separator jSeparator2;
+    private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JLabel lblInfo;
     private javax.swing.JMenu menuFile;
     private javax.swing.JMenuItem miFind;
     private javax.swing.JMenuItem miGoLine;
     private javax.swing.JMenuItem miNew;
     private javax.swing.JMenuItem miOpen;
+    private javax.swing.JMenuItem miPaste;
     private javax.swing.JMenuItem miRepeat;
     private javax.swing.JMenuItem miSave;
     private javax.swing.JPanel pn1;

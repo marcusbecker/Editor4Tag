@@ -19,6 +19,7 @@ import javax.xml.bind.Unmarshaller;
  */
 public class TagUtil {
 
+    public static TagList cache;
     private static final File tagFile = new File("tag.xml");
 
     public static String process(Tag t, String text) {
@@ -43,6 +44,8 @@ public class TagUtil {
         if (lst == null) {
             lst = new TagList();
         }
+
+        cache = lst;
         return lst.getTags();
     }
 

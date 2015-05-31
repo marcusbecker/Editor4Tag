@@ -41,6 +41,7 @@
         <code>[img resources/cap02/@ w=100% &quot;@&quot;]</code>
         <text>[img]</text>
         <breakLine>false</breakLine>
+		<acceptPaste>.jpg .jpeg .png .gif .bmp</acceptPaste>
     </tags>
     <tags>
         <id>8</id>
