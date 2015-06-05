@@ -14,6 +14,7 @@ import br.com.mvbos.etag.core.TagUtil;
 import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.GoLine;
 import br.com.mvbos.etag.ui.MyDocumentListener;
+import br.com.mvbos.etag.ui.TextLineNumber;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -22,7 +23,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.KeyEvent;
-import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
@@ -36,7 +36,6 @@ import javax.swing.Timer;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.Highlighter;
-import javax.swing.text.StyledDocument;
 import javax.swing.text.Utilities;
 
 /**
@@ -48,7 +47,6 @@ public class Window extends javax.swing.JFrame {
     /**
      * Creates new form Window
      */
-    private StyledDocument doc;
     //TODO tranferir para EtagTextPane
     private MyDocumentListener docListener;
 
@@ -64,11 +62,11 @@ public class Window extends javax.swing.JFrame {
     public Window() {
         initComponents();
         addTagButtons();
+        addLineNumber(text);
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
-        doc = text.getStyledDocument();
-        addStylesToDocument(doc);
+        addStylesToDocument(text.getStyledDocument());
 
         docListener = new MyDocumentListener();
         text.getDocument().addDocumentListener(docListener);
@@ -109,6 +107,10 @@ public class Window extends javax.swing.JFrame {
         timer.start();
     }
 
+    private void addLineNumber(JTextPane text) {
+        spText.setRowHeaderView(new TextLineNumber(text));
+    }
+
     private void addTagButtons() {
         for (final Tag t : TagUtil.list()) {
             JButton btn = new JButton(t.getText());
@@ -133,7 +135,7 @@ public class Window extends javax.swing.JFrame {
                         text.replaceSelection(res);
                     }
 
-                    StyleUtil.update(doc, text);
+                    StyleUtil.update(text);
                     text.requestFocus();
                     lastTag = t;
                 }
@@ -147,7 +149,7 @@ public class Window extends javax.swing.JFrame {
             //text.setText(FileUtil.read(file));
             ((EtagTextPane) text).setNewText(FileUtil.read(file));
             text.getCaret().setDot(0);
-            StyleUtil.update(doc, text);
+            StyleUtil.update(text);
 
             int sel = tabbedPane.getSelectedIndex();
             tabbedPane.setTitleAt(sel, file.getName());
@@ -473,7 +475,7 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miNewActionPerformed
 
     private void textKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textKeyReleased
-        StyleUtil.update(doc, text);
+        StyleUtil.update(text);
 
     }//GEN-LAST:event_textKeyReleased
 
@@ -501,7 +503,7 @@ public class Window extends javax.swing.JFrame {
             if (sel != null) {
                 String res = TagUtil.process(lastTag, sel);
                 text.replaceSelection(res);
-                StyleUtil.update(doc, text);
+                StyleUtil.update(text);
                 //text.requestFocus();
             }
 
@@ -617,40 +619,23 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miGoLineActionPerformed
 
     private void miPasteActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miPasteActionPerformed
+
+        EtagTextPane t = (EtagTextPane) text;
+
         try {
             if (clipboard.isDataFlavorAvailable(DataFlavor.stringFlavor)) {
-                //taResult.append(clipboard.getData(DataFlavor.stringFlavor).toString());
-                System.out.println("text");
+                t.paste(clipboard.getData(DataFlavor.stringFlavor).toString(), DataFlavor.stringFlavor);
 
             } else if (clipboard.isDataFlavorAvailable(DataFlavor.javaFileListFlavor)) {
                 List<File> files = (List<File>) clipboard.getData(DataFlavor.javaFileListFlavor);
-                StringBuilder sb = new StringBuilder();
 
-                for (File f : files) {
-                    if (f.isDirectory()) {
-                        continue;
-                    }
-
-                    String ext = f.getName().substring(f.getName().lastIndexOf("."));
-                    ext = ext.toLowerCase();
-
-                    for (Tag t : TagUtil.cache.getTags()) {
-                        if (t.acceptPaste(ext)) {
-                            sb.append(TagUtil.process(t, f.getName()));
-                        }
-                    }
-                }
-
-                if (sb.length() > 0) {
-                    text.getDocument().insertString(text.getCaret().getDot(), sb.toString(), null);
-                    StyleUtil.update(doc, text);
-                }
+                t.paste(files, DataFlavor.javaFileListFlavor);
 
             } else if (clipboard.isDataFlavorAvailable(java.awt.datatransfer.DataFlavor.imageFlavor)) {
-                //pasteImage((BufferedImage) clipboard.getData(DataFlavor.imageFlavor));
+                //TODO paste image from printscreen
             }
 
-        } catch (UnsupportedFlavorException | IOException | BadLocationException ufe) {
+        } catch (UnsupportedFlavorException | IOException ufe) {
             Logger.getLogger(getClass().getName()).log(Level.SEVERE, null, ufe);
         }
     }//GEN-LAST:event_miPasteActionPerformed

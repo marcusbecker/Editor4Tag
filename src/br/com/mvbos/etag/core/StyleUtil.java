@@ -57,11 +57,17 @@ public class StyleUtil {
         StyleConstants.setComponent(s, button);
     }
 
-    public static void update(StyledDocument doc, JTextPane text) {
-        if (doc == null) {
+    public static void update(JTextPane text) {
+
+        if (text == null) {
             return;
         }
 
+        StyledDocument doc = text.getStyledDocument();
+
+        /*if (doc == null) {
+         return;
+         }*/
         try {
             int len = text.getText().length();
             doc.setCharacterAttributes(0, len, doc.getStyle("regular"), true);
