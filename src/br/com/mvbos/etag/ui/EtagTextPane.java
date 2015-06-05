@@ -6,7 +6,7 @@
 package br.com.mvbos.etag.ui;
 
 import br.com.mvbos.etag.core.StyleUtil;
-import br.com.mvbos.etag.core.Tag;
+import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
 import java.awt.Color;
 import java.awt.Component;

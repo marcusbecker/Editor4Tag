@@ -9,12 +9,14 @@ import br.com.mvbos.etag.core.ConfigUtil;
 import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
-import br.com.mvbos.etag.core.Tag;
+import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
 import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.GoLine;
 import br.com.mvbos.etag.ui.MyDocumentListener;
 import br.com.mvbos.etag.ui.TextLineNumber;
+import br.com.mvbos.etag.ui.selector.IMyFontSelector;
+import br.com.mvbos.etag.ui.selector.MyFontSelector;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -63,6 +65,7 @@ public class Window extends javax.swing.JFrame {
         initComponents();
         addTagButtons();
         addLineNumber(text);
+        loadFont(text);
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -216,6 +219,7 @@ public class Window extends javax.swing.JFrame {
         miFind = new javax.swing.JMenuItem();
         miGoLine = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
+        miFont = new javax.swing.JMenuItem();
         miRepeat = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
 
@@ -362,6 +366,14 @@ public class Window extends javax.swing.JFrame {
         });
         editMenu.add(miGoLine);
         editMenu.add(jSeparator3);
+
+        miFont.setText("Font...");
+        miFont.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miFontActionPerformed(evt);
+            }
+        });
+        editMenu.add(miFont);
 
         miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
         miRepeat.setText("Repeat tag");
@@ -640,6 +652,45 @@ public class Window extends javax.swing.JFrame {
         }
     }//GEN-LAST:event_miPasteActionPerformed
 
+    private void miFontActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miFontActionPerformed
+        MyFontSelector m = new MyFontSelector(this, true, text.getFont());
+        m.setLocationRelativeTo(this);
+        m.setColors(text.getForeground(), text.getBackground());
+
+        m.setEvent(new IMyFontSelector() {
+
+            @Override
+            public void saveAction(Object obj) {
+                MyFontSelector mfs = (MyFontSelector) obj;
+                if (mfs.getSelectedFont() != null) {
+                    text.setFont(mfs.getSelectedFont());
+                    FontUtil.save(mfs.getSelectedFont(), mfs.getSelectedForegroundColor(), mfs.getSelectedForegroundColor());
+                }
+
+                if (mfs.getSelectedForegroundColor() != null) {
+                    text.setForeground(mfs.getSelectedForegroundColor());
+                }
+
+                if (mfs.getSelectedBackgroundColor() != null) {
+                    text.setBackground(mfs.getSelectedBackgroundColor());
+                }
+            }
+
+            @Override
+            public void cancelAction(Object obj) {
+            }
+
+            @Override
+            public void change(Object obj) {
+            }
+
+        });
+
+        m.setColors(text.getForeground(), text.getBackground());
+        m.setVisible(true);
+
+    }//GEN-LAST:event_miFontActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -653,6 +704,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JLabel lblInfo;
     private javax.swing.JMenu menuFile;
     private javax.swing.JMenuItem miFind;
+    private javax.swing.JMenuItem miFont;
     private javax.swing.JMenuItem miGoLine;
     private javax.swing.JMenuItem miNew;
     private javax.swing.JMenuItem miOpen;
@@ -667,4 +719,8 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JTextPane text;
     private javax.swing.JTextField tfSearch;
     // End of variables declaration//GEN-END:variables
+
+    private void loadFont(JTextPane text) {
+        text.setFont(FontUtil.load());
+    }
 }

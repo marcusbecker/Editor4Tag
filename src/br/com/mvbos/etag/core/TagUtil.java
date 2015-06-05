@@ -5,6 +5,8 @@
  */
 package br.com.mvbos.etag.core;
 
+import br.com.mvbos.etag.pojo.TagList;
+import br.com.mvbos.etag.pojo.Tag;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.List;
