@@ -48,3 +48,4 @@ dist/
 build.xml
 config.properties
 manifest.mf
+state.ser

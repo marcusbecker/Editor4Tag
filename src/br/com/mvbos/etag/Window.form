@@ -117,6 +117,11 @@
             </MenuItem>
           </SubComponents>
         </Menu>
+        <Menu class="javax.swing.JMenu" name="tagMenu">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Tags"/>
+          </Properties>
+        </Menu>
       </SubComponents>
     </Menu>
   </NonVisualComponents>
@@ -276,7 +281,7 @@
       <SubComponents>
         <Component class="javax.swing.JButton" name="btnCloseSearch">
           <Properties>
-            <Property name="text" type="java.lang.String" value="x"/>
+            <Property name="text" type="java.lang.String" value="Close find"/>
           </Properties>
           <Events>
             <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnCloseSearchActionPerformed"/>

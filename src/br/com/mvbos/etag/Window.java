@@ -7,10 +7,12 @@ package br.com.mvbos.etag;
 
 import br.com.mvbos.etag.core.ConfigUtil;
 import br.com.mvbos.etag.core.FileUtil;
+import br.com.mvbos.etag.core.MiscUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import static br.com.mvbos.etag.core.StyleUtil.addStylesToDocument;
 import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
+import br.com.mvbos.etag.pojo.State;
 import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.GoLine;
 import br.com.mvbos.etag.ui.MyDocumentListener;
@@ -32,6 +34,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.Timer;
@@ -52,6 +55,8 @@ public class Window extends javax.swing.JFrame {
     //TODO tranferir para EtagTextPane
     private MyDocumentListener docListener;
 
+    private final State state;
+
     private static Tag lastTag;
     private static Timer timer;
 
@@ -66,6 +71,9 @@ public class Window extends javax.swing.JFrame {
         addTagButtons();
         addLineNumber(text);
         loadFont(text);
+
+        state = MiscUtil.loadState();
+        config(state);
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
@@ -116,9 +124,11 @@ public class Window extends javax.swing.JFrame {
 
     private void addTagButtons() {
         for (final Tag t : TagUtil.list()) {
-            JButton btn = new JButton(t.getText());
 
-            btn.addActionListener(new java.awt.event.ActionListener() {
+            JButton btn = new JButton(t.getText());
+            JMenuItem item = new JMenuItem(t.getText());
+
+            ActionListener ac = new ActionListener() {
                 @Override
                 public void actionPerformed(java.awt.event.ActionEvent evt) {
                     String sel = text.getSelectedText();
@@ -142,7 +152,12 @@ public class Window extends javax.swing.JFrame {
                     text.requestFocus();
                     lastTag = t;
                 }
-            });
+            };
+
+            btn.addActionListener(ac);
+            item.addActionListener(ac);
+
+            tagMenu.add(item);
             pnTag.add(btn);
         }
     }
@@ -222,6 +237,7 @@ public class Window extends javax.swing.JFrame {
         miFont = new javax.swing.JMenuItem();
         miRepeat = new javax.swing.JMenuItem();
         jMenuItem1 = new javax.swing.JMenuItem();
+        tagMenu = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
         setTitle("Editor4Tag");
@@ -268,7 +284,7 @@ public class Window extends javax.swing.JFrame {
 
         tabbedPane.addTab("arquivo", pn1);
 
-        btnCloseSearch.setText("x");
+        btnCloseSearch.setText("Close find");
         btnCloseSearch.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnCloseSearchActionPerformed(evt);
@@ -394,6 +410,9 @@ public class Window extends javax.swing.JFrame {
 
         fileMenu.add(editMenu);
 
+        tagMenu.setText("Tags");
+        fileMenu.add(tagMenu);
+
         setJMenuBar(fileMenu);
 
         javax.swing.GroupLayout layout = new javax.swing.GroupLayout(getContentPane());
@@ -501,8 +520,11 @@ public class Window extends javax.swing.JFrame {
                 return;
             }
         }
-
         timer.stop();
+
+        state.showFind = pnSearch.isVisible();
+        MiscUtil.saveState(state);
+
         dispose();
 
     }//GEN-LAST:event_formWindowClosing
@@ -716,11 +738,16 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPanel pnTag;
     private javax.swing.JScrollPane spText;
     private javax.swing.JTabbedPane tabbedPane;
+    private javax.swing.JMenu tagMenu;
     private javax.swing.JTextPane text;
     private javax.swing.JTextField tfSearch;
     // End of variables declaration//GEN-END:variables
 
     private void loadFont(JTextPane text) {
         text.setFont(FontUtil.load());
+    }
+
+    private void config(State state) {
+        pnSearch.setVisible(state.showFind);
     }
 }

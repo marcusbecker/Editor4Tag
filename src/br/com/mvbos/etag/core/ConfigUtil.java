@@ -1,4 +1,4 @@
-/*
+ /*
  * To change this license header, choose License Headers in Project Properties.
  * To change this template file, choose Tools | Templates
  * and open the template in the editor.
@@ -10,6 +10,8 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -52,6 +54,32 @@ public class ConfigUtil {
 
     public static String load(String key) {
         return props.getProperty(key);
+    }
+
+    public static void saveState(Object obj) {
+        try {
+            ObjectOutputStream out = new ObjectOutputStream(new FileOutputStream("state.ser"));
+            out.writeObject(obj);
+            out.close();
+        } catch (IOException ex) {
+            Logger.getLogger(ConfigUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    public static Object loadState() {
+        Object o = null;
+
+        try {
+            ObjectInputStream in = new ObjectInputStream(new FileInputStream("state.ser"));
+            o = in.readObject();
+            in.close();
+        } catch (FileNotFoundException nfe) {
+
+        } catch (IOException | ClassNotFoundException ex) {
+            Logger.getLogger(ConfigUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+
+        return o;
     }
 
 }
