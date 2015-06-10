@@ -30,8 +30,7 @@ public class LinePainter
      *  @param component  text component that requires background line painting
      */
     public LinePainter(JTextComponent component) {
-        this(component, null);
-        setLighter(component.getSelectionColor());
+        this(component, component.getSelectionColor());
     }
 
     /*
@@ -42,7 +41,8 @@ public class LinePainter
      */
     public LinePainter(JTextComponent component, Color color) {
         this.component = component;
-        setColor(color);
+        //setColor(color);
+        setColor(new Color(222, 233, 244));
 
         //  Add listeners so we know when to change highlighting
         component.addCaretListener(this);
@@ -66,19 +66,9 @@ public class LinePainter
         this.color = color;
     }
 
-    /*
-     *  Calculate the line color by making the selection color lighter
-     *
-     *  @return the color of the background line
-     */
-    public void setLighter(Color color) {
-        setColor(new Color(222, 233, 244));
-    }
-
     private int lineStart = 111 * 8;
 
     //  Paint the background highlight
-
     @Override
     public void paint(Graphics g, int p0, int p1, Shape bounds, JTextComponent c) {
         try {
@@ -103,6 +93,10 @@ public class LinePainter
     private void resetHighlight() {
         //  Use invokeLater to make sure updates to the Document are completed,
         //  otherwise Undo processing causes the modelToView method to loop.
+
+        if (lastView == null) {
+            return;
+        }
 
         SwingUtilities.invokeLater(new Runnable() {
             public void run() {

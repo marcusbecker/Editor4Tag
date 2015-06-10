@@ -5,19 +5,24 @@
  */
 package br.com.mvbos.etag.ui;
 
+import br.com.mvbos.etag.Window;
 import br.com.mvbos.etag.core.StyleUtil;
 import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
 import java.awt.Color;
 import java.awt.Component;
+import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
+import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
 import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -26,13 +31,17 @@ import javax.swing.JComponent;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.TransferHandler;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter;
+import javax.swing.text.Highlighter;
 import javax.swing.text.StyledDocument;
+import javax.swing.text.Utilities;
 import javax.swing.undo.CannotRedoException;
 import javax.swing.undo.CannotUndoException;
 import javax.swing.undo.UndoManager;
@@ -52,6 +61,11 @@ public class EtagTextPane extends JTextPane {
 
     private final UndoManager undoMgr = new UndoManager();
 
+    public void goDot(int dot) {
+        getCaret().setDot(dot);
+        hig.updateRownColumn(1);
+    }
+
     class eTagTransferHandler extends TransferHandler {
 
         private final EtagTextPane text;
@@ -63,6 +77,16 @@ public class EtagTextPane extends JTextPane {
         @Override
         public boolean canImport(JComponent comp, DataFlavor[] transferFlavors) {
             return true;
+        }
+
+        @Override
+        public void exportToClipboard(JComponent comp, Clipboard clip, int action) throws IllegalStateException {
+            if (action == TransferHandler.COPY || action == TransferHandler.MOVE) {
+                clip.setContents(new StringSelection(text.getSelectedText()), null);
+                if (action == TransferHandler.MOVE) {
+                    text.replaceSelection("");
+                }
+            }
         }
 
         @Override
@@ -134,14 +158,106 @@ public class EtagTextPane extends JTextPane {
 
     public EtagTextPane() {
         super();
-        addUndoRedo();
-        addTransferHandler();
+        init();
     }
 
     public EtagTextPane(StyledDocument doc) {
         super(doc);
+        init();
+    }
+
+    private int rowNum;
+    private int colNum;
+
+    Hig hig = new Hig(this);
+
+    private void init() {
         addUndoRedo();
         addTransferHandler();
+
+        this.addCaretListener(hig);
+    }
+
+    class Hig implements CaretListener {
+
+        private JTextPane t;
+
+        private Hig(EtagTextPane t) {
+            this.t = t;
+        }
+
+        public void updateRownColumn(int id) {
+            int caretPos = getCaretPosition();
+            colNum = 0;
+            rowNum = (caretPos == 0) ? 1 : 0;
+
+            try {
+                int offset = Utilities.getRowStart(t, caretPos);
+                colNum = caretPos - offset + 1;
+
+                for (offset = caretPos; offset > 0;) {
+                    offset = Utilities.getRowStart(t, offset) - 1;
+                    rowNum++;
+                }
+
+            } catch (BadLocationException ex) {
+                Logger.getLogger(Window.class.getName()).log(Level.SEVERE, null, ex);
+            }
+
+            if (!actionListenerList.isEmpty()) {
+                ActionEvent aEvent = new ActionEvent(t, id, t.toString());
+                for (ActionListener a : actionListenerList) {
+                    a.actionPerformed(aEvent);
+                }
+            }
+        }
+
+        @Override
+        public void caretUpdate(CaretEvent evt) {
+
+            updateRownColumn(0);
+
+            Highlighter hilite = getHighlighter();
+            hilite.removeAllHighlights();
+
+            if (evt.getDot() == evt.getMark()) {
+                return;
+            }
+
+            int start = getSelectionStart();
+            String sel = getSelectedText();
+
+            if (sel == null || sel.trim().isEmpty()) {
+                return;
+            }
+
+            try {
+
+                int pos = 0;
+                String t = getText();
+
+                while ((pos = t.indexOf(sel, pos)) > -1) {
+                    hilite.addHighlight(pos, pos + sel.length(), start == pos ? EtagTextPane.findPainter : EtagTextPane.hPainter);
+                    pos += sel.length();
+                }
+
+            } catch (BadLocationException e) {
+            }
+        }
+
+    }
+    private List<ActionListener> actionListenerList = new ArrayList<>(2);
+
+    public void addLineColumnChangeEvent(ActionListener a) {
+        actionListenerList.add(a);
+    }
+
+    public int getRowNum() {
+        return rowNum;
+    }
+
+    public int getColNum() {
+        return colNum;
     }
 
     public void setNewText(String t) {
@@ -159,7 +275,6 @@ public class EtagTextPane extends JTextPane {
     }
 
     private void addTransferHandler() {
-        //System.out.println(this.getTransferHandler().getClass());
         setTransferHandler(new eTagTransferHandler(this));
     }
 

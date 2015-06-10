@@ -5,6 +5,7 @@
  */
 package br.com.mvbos.etag.pojo;
 
+import java.awt.Dimension;
 import java.io.Serializable;
 
 /**
@@ -13,7 +14,10 @@ import java.io.Serializable;
  */
 public class State implements Serializable {
 
-    public boolean showFind;
+    private static final long serialVersionUID = -1;
 
+    public boolean showFind;
+    public Dimension dimension;
+    public int dot;
 
 }

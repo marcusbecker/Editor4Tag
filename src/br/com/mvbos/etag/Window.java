@@ -38,10 +38,8 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
 import javax.swing.Timer;
-import javax.swing.text.BadLocationException;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.Highlighter;
-import javax.swing.text.Utilities;
 
 /**
  *
@@ -72,15 +70,27 @@ public class Window extends javax.swing.JFrame {
         addLineNumber(text);
         loadFont(text);
 
-        state = MiscUtil.loadState();
-        config(state);
-
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
         addStylesToDocument(text.getStyledDocument());
 
         docListener = new MyDocumentListener();
         text.getDocument().addDocumentListener(docListener);
+
+        ((EtagTextPane) text).addLineColumnChangeEvent(new ActionListener() {
+
+            @Override
+            public void actionPerformed(ActionEvent evt) {
+                EtagTextPane t = (EtagTextPane) evt.getSource();
+
+                if (evt.getID() == 0) {
+                    lblInfo.setText("Line: " + t.getRowNum() + " | Column: " + t.getColNum());
+                } else {
+                    //TODO corrigir
+                    lblInfo.setText("");
+                }
+            }
+        });
 
         String recent = ConfigUtil.load("recent_file");
         if (recent != null) {
@@ -110,12 +120,16 @@ public class Window extends javax.swing.JFrame {
                     } else if (!docListener.isChange() && title.startsWith("*")) {
                         tabbedPane.setTitleAt(sel, title.replaceFirst("\\*", ""));
                     }
-
                 }
             }
         });
 
+        state = MiscUtil.loadState();
+        config(state);
+        text.requestFocus();
+
         timer.start();
+
     }
 
     private void addLineNumber(JTextPane text) {
@@ -166,7 +180,6 @@ public class Window extends javax.swing.JFrame {
         if (FileUtil.isValid(file)) {
             //text.setText(FileUtil.read(file));
             ((EtagTextPane) text).setNewText(FileUtil.read(file));
-            text.getCaret().setDot(0);
             StyleUtil.update(text);
 
             int sel = tabbedPane.getSelectedIndex();
@@ -259,11 +272,7 @@ public class Window extends javax.swing.JFrame {
         pnTag.add(btnAdd, new java.awt.GridBagConstraints());
 
         text.setFont(new java.awt.Font("Courier New", 0, 12)); // NOI18N
-        text.addCaretListener(new javax.swing.event.CaretListener() {
-            public void caretUpdate(javax.swing.event.CaretEvent evt) {
-                textCaretUpdate(evt);
-            }
-        });
+        text.setOpaque(false);
         text.addKeyListener(new java.awt.event.KeyAdapter() {
             public void keyReleased(java.awt.event.KeyEvent evt) {
                 textKeyReleased(evt);
@@ -523,6 +532,8 @@ public class Window extends javax.swing.JFrame {
         timer.stop();
 
         state.showFind = pnSearch.isVisible();
+        state.dimension = this.getSize();
+        state.dot = text.getCaret().getDot();
         MiscUtil.saveState(state);
 
         dispose();
@@ -576,57 +587,6 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_tfSearchKeyReleased
 
-
-    private void textCaretUpdate(javax.swing.event.CaretEvent evt) {//GEN-FIRST:event_textCaretUpdate
-
-        int caretPos = text.getCaretPosition();
-        int colNum = 0;
-        int rowNum = (caretPos == 0) ? 1 : 0;
-
-        try {
-            int offset = Utilities.getRowStart(text, caretPos);
-            colNum = caretPos - offset + 1;
-
-            for (offset = caretPos; offset > 0;) {
-                offset = Utilities.getRowStart(text, offset) - 1;
-                rowNum++;
-            }
-
-        } catch (BadLocationException ex) {
-            Logger.getLogger(Window.class.getName()).log(Level.SEVERE, null, ex);
-        }
-
-        lblInfo.setText("Line: " + rowNum + " | Column: " + colNum);
-
-        if (evt.getDot() == evt.getMark()) {
-            return;
-        }
-
-        int start = text.getSelectionStart();
-        String sel = text.getSelectedText();
-        Highlighter hilite = text.getHighlighter();
-
-        hilite.removeAllHighlights();
-
-        if (sel == null || sel.trim().isEmpty()) {
-            return;
-        }
-
-        try {
-
-            int pos = 0;
-            String t = text.getText();
-
-            while ((pos = t.indexOf(sel, pos)) > -1) {
-                hilite.addHighlight(pos, pos + sel.length(), start == pos ? EtagTextPane.findPainter : EtagTextPane.hPainter);
-                pos += sel.length();
-            }
-
-        } catch (BadLocationException e) {
-        }
-
-
-    }//GEN-LAST:event_textCaretUpdate
 
     private void miFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miFindActionPerformed
         pnSearch.setVisible(true);
@@ -749,5 +709,11 @@ public class Window extends javax.swing.JFrame {
 
     private void config(State state) {
         pnSearch.setVisible(state.showFind);
+
+        ((EtagTextPane) text).goDot(state.dot);
+
+        if (state.dimension != null) {
+            this.setSize(state.dimension);
+        }
     }
 }
