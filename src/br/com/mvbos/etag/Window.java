@@ -26,17 +26,21 @@ import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javax.swing.AbstractAction;
+import javax.swing.Action;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JTextPane;
+import javax.swing.KeyStroke;
 import javax.swing.Timer;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.Highlighter;
@@ -47,6 +51,10 @@ import javax.swing.text.Highlighter;
  */
 public class Window extends javax.swing.JFrame {
 
+    //TODO copiar por cima de outro texto
+    //TODO find replace
+    //TODO copiar substituindo aspas do word por " “PAUSA”
+    //TODO achar pf da imagem relativo
     /**
      * Creates new form Window
      */
@@ -137,14 +145,16 @@ public class Window extends javax.swing.JFrame {
     }
 
     private void addTagButtons() {
+        int shortcutId = 1;
+
         for (final Tag t : TagUtil.list()) {
 
             JButton btn = new JButton(t.getText());
             JMenuItem item = new JMenuItem(t.getText());
 
-            ActionListener ac = new ActionListener() {
+            Action ac = new AbstractAction() {
                 @Override
-                public void actionPerformed(java.awt.event.ActionEvent evt) {
+                public void actionPerformed(ActionEvent evt) {
                     String sel = text.getSelectedText();
 
                     if (sel == null) {
@@ -156,7 +166,6 @@ public class Window extends javax.swing.JFrame {
                         text.setSelectionStart(st + stCode);
                         text.setSelectionEnd(text.getSelectionStart() + 1);
 
-                        //System.out.println();
                     } else {
                         String res = TagUtil.process(t, sel);
                         text.replaceSelection(res);
@@ -171,6 +180,25 @@ public class Window extends javax.swing.JFrame {
             btn.addActionListener(ac);
             item.addActionListener(ac);
 
+            int code;
+            if (shortcutId == 0) {
+                code = -1;
+            } else if (shortcutId == 10) {
+                shortcutId = 0;
+                code = KeyEvent.VK_0;
+                btn.setToolTipText("Shortcut in CTRL + 0");
+            } else {
+                code = KeyStroke.getKeyStroke(String.valueOf(shortcutId)).getKeyCode();
+                btn.setToolTipText("Shortcut in CTRL + " + shortcutId);
+                shortcutId++;
+            }
+
+            if (code != -1) {
+                final String link = "shortcut_" + shortcutId;
+                text.getInputMap().put(KeyStroke.getKeyStroke(code, InputEvent.CTRL_DOWN_MASK), link);
+                text.getActionMap().put(link, ac);
+            }
+
             tagMenu.add(item);
             pnTag.add(btn);
         }
@@ -178,8 +206,8 @@ public class Window extends javax.swing.JFrame {
 
     private void loadTextFromFile(File file) {
         if (FileUtil.isValid(file)) {
-            //text.setText(FileUtil.read(file));
             ((EtagTextPane) text).setNewText(FileUtil.read(file));
+            text.setCaretPosition(0);
             StyleUtil.update(text);
 
             int sel = tabbedPane.getSelectedIndex();
@@ -241,6 +269,7 @@ public class Window extends javax.swing.JFrame {
         miOpen = new javax.swing.JMenuItem();
         miSave = new javax.swing.JMenuItem();
         jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        miExit = new javax.swing.JMenuItem();
         editMenu = new javax.swing.JMenu();
         miPaste = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
@@ -358,6 +387,14 @@ public class Window extends javax.swing.JFrame {
         });
         menuFile.add(miSave);
         menuFile.add(jSeparator1);
+
+        miExit.setText("Exit");
+        miExit.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miExitActionPerformed(evt);
+            }
+        });
+        menuFile.add(miExit);
 
         fileMenu.add(menuFile);
 
@@ -521,22 +558,7 @@ public class Window extends javax.swing.JFrame {
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
 
-        if (docListener.isChange()) {
-            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (res == JOptionPane.YES_OPTION) {
-                saveFile();
-            } else if (res == JOptionPane.CANCEL_OPTION) {
-                return;
-            }
-        }
-        timer.stop();
-
-        state.showFind = pnSearch.isVisible();
-        state.dimension = this.getSize();
-        state.dot = text.getCaret().getDot();
-        MiscUtil.saveState(state);
-
-        dispose();
+        close();
 
     }//GEN-LAST:event_formWindowClosing
 
@@ -673,6 +695,10 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_miFontActionPerformed
 
+    private void miExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miExitActionPerformed
+        close();
+    }//GEN-LAST:event_miExitActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
@@ -685,6 +711,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JLabel lblInfo;
     private javax.swing.JMenu menuFile;
+    private javax.swing.JMenuItem miExit;
     private javax.swing.JMenuItem miFind;
     private javax.swing.JMenuItem miFont;
     private javax.swing.JMenuItem miGoLine;
@@ -715,5 +742,24 @@ public class Window extends javax.swing.JFrame {
         if (state.dimension != null) {
             this.setSize(state.dimension);
         }
+    }
+
+    private void close() {
+        if (docListener.isChange()) {
+            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (res == JOptionPane.YES_OPTION) {
+                saveFile();
+            } else if (res == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
+        timer.stop();
+
+        state.showFind = pnSearch.isVisible();
+        state.dimension = this.getSize();
+        state.dot = text.getCaret().getDot();
+        MiscUtil.saveState(state);
+
+        dispose();
     }
 }
