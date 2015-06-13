@@ -6,6 +6,7 @@
 package br.com.mvbos.etag.ui;
 
 import br.com.mvbos.etag.Window;
+import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
@@ -22,6 +23,7 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.logging.Level;
@@ -114,10 +116,19 @@ public class EtagTextPane extends JTextPane {
         }
     }
 
+    public static boolean replaceQuote = true;
+
     public boolean paste(Object o, DataFlavor flavor) {
         try {
             if (flavor == DataFlavor.stringFlavor) {
-                getDocument().insertString(getCaretPosition(), o.toString(), null);
+                String s = o.toString();
+
+                if (replaceQuote) {
+                    s = s.replaceAll("“", "\"").replaceAll("”", "\"");
+                }
+
+                replaceSelection(s);
+                //getDocument().insertString(getCaretPosition(), o.toString(), null);
 
             } else if (flavor == DataFlavor.javaFileListFlavor) {
                 List<File> files = (List<File>) o;
@@ -131,9 +142,28 @@ public class EtagTextPane extends JTextPane {
                     String ext = f.getName().substring(f.getName().lastIndexOf("."));
                     ext = ext.toLowerCase();
 
+                    String fName = f.getName();
+
+                    try {
+                        Path textPath = FileUtil.selected.toPath();
+                        Path resPath = textPath.relativize(f.toPath());
+
+                        String p = resPath.toString();
+                        if (p.toCharArray()[0] == '.') {
+                            p = p.substring(3);
+                        }
+
+                        p = p.replaceAll("\\\\", "/");
+
+                        fName = p;
+
+                    } catch (Exception e) {
+                        System.err.println("Erro ao obter path " + e.getMessage());
+                    }
+
                     for (Tag tag : TagUtil.cache.getTags()) {
                         if (tag.acceptPaste(ext)) {
-                            sb.append(TagUtil.process(tag, f.getName()));
+                            sb.append(TagUtil.process(tag, fName));
                         }
                     }
                 }

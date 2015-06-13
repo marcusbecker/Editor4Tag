@@ -38,7 +38,7 @@
     </tags>
     <tags>
         <id>7</id>
-        <code>[img resources/cap02/@ &quot;@&quot;]</code>
+        <code>[img @ &quot;@&quot;]</code>
         <text>[img]</text>
         <breakLine>false</breakLine>
 		<acceptPaste>.jpg .jpeg .png .gif .bmp</acceptPaste>

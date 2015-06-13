@@ -265,11 +265,19 @@
         <DimensionLayout dim="0">
           <Group type="103" groupAlignment="0" attributes="0">
               <Group type="102" alignment="0" attributes="0">
-                  <EmptySpace max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
                   <Component id="btnCloseSearch" min="-2" max="-2" attributes="0"/>
-                  <EmptySpace max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
                   <Component id="tfSearch" max="32767" attributes="0"/>
-                  <EmptySpace max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
+                  <Component id="lblReplace" min="-2" pref="60" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
+                  <Component id="tfReplace" max="32767" attributes="0"/>
+                  <EmptySpace type="unrelated" min="-2" max="-2" attributes="0"/>
+                  <Component id="btnReplace" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
+                  <Component id="btnReplaceAll" min="-2" max="-2" attributes="0"/>
+                  <EmptySpace min="-2" max="-2" attributes="0"/>
               </Group>
           </Group>
         </DimensionLayout>
@@ -280,6 +288,10 @@
                   <Group type="103" groupAlignment="3" attributes="0">
                       <Component id="btnCloseSearch" alignment="3" min="-2" max="-2" attributes="0"/>
                       <Component id="tfSearch" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="lblReplace" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="tfReplace" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="btnReplace" alignment="3" min="-2" max="-2" attributes="0"/>
+                      <Component id="btnReplaceAll" alignment="3" min="-2" max="-2" attributes="0"/>
                   </Group>
                   <EmptySpace max="32767" attributes="0"/>
               </Group>
@@ -299,6 +311,26 @@
           <Events>
             <EventHandler event="keyReleased" listener="java.awt.event.KeyListener" parameters="java.awt.event.KeyEvent" handler="tfSearchKeyReleased"/>
           </Events>
+        </Component>
+        <Component class="javax.swing.JLabel" name="lblReplace">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Replace:"/>
+          </Properties>
+        </Component>
+        <Component class="javax.swing.JTextField" name="tfReplace">
+        </Component>
+        <Component class="javax.swing.JButton" name="btnReplace">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Replace"/>
+          </Properties>
+          <Events>
+            <EventHandler event="actionPerformed" listener="java.awt.event.ActionListener" parameters="java.awt.event.ActionEvent" handler="btnReplaceActionPerformed"/>
+          </Events>
+        </Component>
+        <Component class="javax.swing.JButton" name="btnReplaceAll">
+          <Properties>
+            <Property name="text" type="java.lang.String" value="Replace All"/>
+          </Properties>
         </Component>
       </SubComponents>
     </Container>

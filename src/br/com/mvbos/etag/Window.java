@@ -51,14 +51,9 @@ import javax.swing.text.Highlighter;
  */
 public class Window extends javax.swing.JFrame {
 
-    //TODO copiar por cima de outro texto
-    //TODO find replace
-    //TODO copiar substituindo aspas do word por " “PAUSA”
-    //TODO achar pf da imagem relativo
-    /**
-     * Creates new form Window
-     */
+    //TODO replace all
     //TODO tranferir para EtagTextPane
+    
     private MyDocumentListener docListener;
 
     private final State state;
@@ -262,6 +257,10 @@ public class Window extends javax.swing.JFrame {
         pnSearch = new javax.swing.JPanel();
         btnCloseSearch = new javax.swing.JButton();
         tfSearch = new javax.swing.JTextField();
+        lblReplace = new javax.swing.JLabel();
+        tfReplace = new javax.swing.JTextField();
+        btnReplace = new javax.swing.JButton();
+        btnReplaceAll = new javax.swing.JButton();
         lblInfo = new javax.swing.JLabel();
         fileMenu = new javax.swing.JMenuBar();
         menuFile = new javax.swing.JMenu();
@@ -335,6 +334,17 @@ public class Window extends javax.swing.JFrame {
             }
         });
 
+        lblReplace.setText("Replace:");
+
+        btnReplace.setText("Replace");
+        btnReplace.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnReplaceActionPerformed(evt);
+            }
+        });
+
+        btnReplaceAll.setText("Replace All");
+
         javax.swing.GroupLayout pnSearchLayout = new javax.swing.GroupLayout(pnSearch);
         pnSearch.setLayout(pnSearchLayout);
         pnSearchLayout.setHorizontalGroup(
@@ -344,6 +354,14 @@ public class Window extends javax.swing.JFrame {
                 .addComponent(btnCloseSearch)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tfSearch)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(lblReplace, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(tfReplace)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
+                .addComponent(btnReplace)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnReplaceAll)
                 .addContainerGap())
         );
         pnSearchLayout.setVerticalGroup(
@@ -352,7 +370,11 @@ public class Window extends javax.swing.JFrame {
                 .addContainerGap()
                 .addGroup(pnSearchLayout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(btnCloseSearch)
-                    .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE))
+                    .addComponent(tfSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(lblReplace)
+                    .addComponent(tfReplace, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
+                    .addComponent(btnReplace)
+                    .addComponent(btnReplaceAll))
                 .addContainerGap(javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE))
         );
 
@@ -609,7 +631,6 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_tfSearchKeyReleased
 
-
     private void miFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miFindActionPerformed
         pnSearch.setVisible(true);
         tfSearch.requestFocus();
@@ -699,10 +720,34 @@ public class Window extends javax.swing.JFrame {
         close();
     }//GEN-LAST:event_miExitActionPerformed
 
+    private void btnReplaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReplaceActionPerformed
+
+        text.replaceSelection(tfReplace.getText());
+        searchIndex++;
+
+        String s = tfSearch.getText();
+        String t = text.getText();
+
+        if (s != null && !s.isEmpty()) {
+
+            int idx = t.indexOf(s, searchIndex);
+            if (idx > -1) {
+                text.select(idx, idx + s.length());
+                searchIndex = idx;
+            } else {
+                searchIndex = 0;
+            }
+        }
+
+
+    }//GEN-LAST:event_btnReplaceActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnCloseSearch;
+    private javax.swing.JButton btnReplace;
+    private javax.swing.JButton btnReplaceAll;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
@@ -710,6 +755,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JLabel lblInfo;
+    private javax.swing.JLabel lblReplace;
     private javax.swing.JMenu menuFile;
     private javax.swing.JMenuItem miExit;
     private javax.swing.JMenuItem miFind;
@@ -727,6 +773,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JTabbedPane tabbedPane;
     private javax.swing.JMenu tagMenu;
     private javax.swing.JTextPane text;
+    private javax.swing.JTextField tfReplace;
     private javax.swing.JTextField tfSearch;
     // End of variables declaration//GEN-END:variables
 
