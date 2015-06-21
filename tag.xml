@@ -83,4 +83,10 @@
         <text>[box]</text>
         <breakLine>false</breakLine>
     </tags>
+    <tags>
+        <id>13</id>
+        <code>(@)</code>
+        <text>Link</text>
+        <breakLine>false</breakLine>
+    </tags>	
 </tag_list>

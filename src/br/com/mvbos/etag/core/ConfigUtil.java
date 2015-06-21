@@ -24,6 +24,7 @@ public class ConfigUtil {
 
     private final static Properties props = new Properties();
     private static final String PROPERTIES_FILE = "config.properties";
+    public static String FILE_LIST_SEP = ";";
 
     static {
 
@@ -52,8 +53,33 @@ public class ConfigUtil {
         }
     }
 
+    public static void saveList(String key, Object[] values) {
+        try {
+            StringBuilder sb = new StringBuilder();
+            for (Object s : values) {
+                sb.append(s).append(FILE_LIST_SEP);
+            }
+            
+            props.setProperty(key, sb.toString());
+            props.store(new FileOutputStream(PROPERTIES_FILE), null);
+            
+        } catch (IOException ex) {
+            Logger.getLogger(ConfigUtil.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
     public static String load(String key) {
         return props.getProperty(key);
+    }
+
+    public static String[] loadList(String key) {
+        String[] arr = new String[0];
+        String recent = props.getProperty(key);
+        if (recent != null && !recent.isEmpty()) {
+            arr = recent.split(ConfigUtil.FILE_LIST_SEP);
+        }
+
+        return arr;
     }
 
     public static void saveState(Object obj) {

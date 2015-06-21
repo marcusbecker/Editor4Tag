@@ -19,6 +19,7 @@ import br.com.mvbos.etag.ui.MyDocumentListener;
 import br.com.mvbos.etag.ui.TextLineNumber;
 import br.com.mvbos.etag.ui.selector.IMyFontSelector;
 import br.com.mvbos.etag.ui.selector.MyFontSelector;
+import java.awt.Component;
 import java.awt.HeadlessException;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
@@ -30,7 +31,9 @@ import java.awt.event.InputEvent;
 import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -53,7 +56,7 @@ public class Window extends javax.swing.JFrame {
 
     //TODO replace all
     //TODO tranferir para EtagTextPane
-    
+    //TODO Limpar arquivos recentes
     private MyDocumentListener docListener;
 
     private final State state;
@@ -71,6 +74,7 @@ public class Window extends javax.swing.JFrame {
         initComponents();
         addTagButtons();
         addLineNumber(text);
+        addRecentFileList();
         loadFont(text);
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
@@ -200,6 +204,10 @@ public class Window extends javax.swing.JFrame {
     }
 
     private void loadTextFromFile(File file) {
+
+        recentFiles.add(file.getAbsolutePath());
+        ConfigUtil.saveList("recent_file_list", recentFiles.toArray());
+
         if (FileUtil.isValid(file)) {
             ((EtagTextPane) text).setNewText(FileUtil.read(file));
             text.setCaretPosition(0);
@@ -267,7 +275,8 @@ public class Window extends javax.swing.JFrame {
         miNew = new javax.swing.JMenuItem();
         miOpen = new javax.swing.JMenuItem();
         miSave = new javax.swing.JMenuItem();
-        jSeparator1 = new javax.swing.JPopupMenu.Separator();
+        sepRecentFiles = new javax.swing.JPopupMenu.Separator();
+        jSeparator4 = new javax.swing.JPopupMenu.Separator();
         miExit = new javax.swing.JMenuItem();
         editMenu = new javax.swing.JMenu();
         miPaste = new javax.swing.JMenuItem();
@@ -408,7 +417,8 @@ public class Window extends javax.swing.JFrame {
             }
         });
         menuFile.add(miSave);
-        menuFile.add(jSeparator1);
+        menuFile.add(sepRecentFiles);
+        menuFile.add(jSeparator4);
 
         miExit.setText("Exit");
         miExit.addActionListener(new java.awt.event.ActionListener() {
@@ -522,27 +532,8 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_jMenuItem1ActionPerformed
 
     private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
-
-        //TODO remover ao trabalhar com muitos arquivos
-        if (docListener.isChange()) {
-            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (res == JOptionPane.YES_OPTION) {
-                saveFile();
-            } else if (res == JOptionPane.CANCEL_OPTION) {
-                return;
-            }
-        }
-
-        final JFileChooser fc = new JFileChooser(FileUtil.selected);
-        int returnVal = fc.showOpenDialog(this);
-        if (returnVal == JFileChooser.APPROVE_OPTION) {
-            docListener.setChange(false);
-            File file = fc.getSelectedFile();
-            loadTextFromFile(file);
-        }
-
+        verifyChangeAndOpenFile(null);
     }//GEN-LAST:event_miOpenActionPerformed
-
 
     private void miSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miSaveActionPerformed
         saveFile();
@@ -751,9 +742,9 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
-    private javax.swing.JPopupMenu.Separator jSeparator1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
+    private javax.swing.JPopupMenu.Separator jSeparator4;
     private javax.swing.JLabel lblInfo;
     private javax.swing.JLabel lblReplace;
     private javax.swing.JMenu menuFile;
@@ -769,6 +760,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JPanel pn1;
     private javax.swing.JPanel pnSearch;
     private javax.swing.JPanel pnTag;
+    private javax.swing.JPopupMenu.Separator sepRecentFiles;
     private javax.swing.JScrollPane spText;
     private javax.swing.JTabbedPane tabbedPane;
     private javax.swing.JMenu tagMenu;
@@ -808,5 +800,70 @@ public class Window extends javax.swing.JFrame {
         MiscUtil.saveState(state);
 
         dispose();
+    }
+
+    public static Set<String> recentFiles = new HashSet<>(20);
+
+    private void addRecentFileList() {
+        int px = 0;
+        menuFile.getTreeLock();
+        for (int i = 0; i < menuFile.getComponents().length; i++) {
+
+            Component c = menuFile.getComponents()[i];
+            System.out.println("c.getName() " + c.getName());
+            if (c.getName().equals("sepRecentFiles")) {
+                px = i;
+                break;
+            }
+        }
+
+        if (px == 0) {
+            px = menuFile.getItemCount() - 2;
+        }
+
+        String recent = ConfigUtil.load("recent_file_list");
+        if (recent != null && !recent.isEmpty()) {
+            String[] files = recent.split(ConfigUtil.FILE_LIST_SEP);
+            for (String s : files) {
+                final File f = new File(s);
+                if (!f.exists() || f.isDirectory() || recentFiles.contains(f.getAbsolutePath())) {
+                    continue;
+                }
+
+                JMenuItem item = new JMenuItem(f.getName());
+                recentFiles.add(f.getAbsolutePath());
+                menuFile.insert(item, px++);
+                item.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        verifyChangeAndOpenFile(f);
+                    }
+                });
+            }
+        }
+    }
+
+    private void verifyChangeAndOpenFile(File file) {
+        //TODO remover ao trabalhar com muitos arquivos
+        if (docListener.isChange()) {
+            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+            if (res == JOptionPane.YES_OPTION) {
+                saveFile();
+            } else if (res == JOptionPane.CANCEL_OPTION) {
+                return;
+            }
+        }
+
+        if (file == null) {
+            final JFileChooser fc = new JFileChooser(FileUtil.selected);
+            int returnVal = fc.showOpenDialog(this);
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                docListener.setChange(false);
+                file = fc.getSelectedFile();
+                loadTextFromFile(file);
+            }
+        } else {
+            loadTextFromFile(file);
+        }
     }
 }
