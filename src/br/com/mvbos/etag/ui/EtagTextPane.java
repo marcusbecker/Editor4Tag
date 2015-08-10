@@ -199,7 +199,7 @@ public class EtagTextPane extends JTextPane {
     private int rowNum;
     private int colNum;
 
-    Hig hig = new Hig(this);
+    private final Hig hig = new Hig(this);
 
     private void init() {
         addUndoRedo();

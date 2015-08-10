@@ -270,6 +270,7 @@ public class Window extends javax.swing.JFrame {
         btnReplace = new javax.swing.JButton();
         btnReplaceAll = new javax.swing.JButton();
         lblInfo = new javax.swing.JLabel();
+        btnSecSave = new javax.swing.JButton();
         fileMenu = new javax.swing.JMenuBar();
         menuFile = new javax.swing.JMenu();
         miNew = new javax.swing.JMenuItem();
@@ -325,7 +326,7 @@ public class Window extends javax.swing.JFrame {
         );
         pn1Layout.setVerticalGroup(
             pn1Layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
-            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 384, Short.MAX_VALUE)
+            .addComponent(spText, javax.swing.GroupLayout.DEFAULT_SIZE, 375, Short.MAX_VALUE)
         );
 
         tabbedPane.addTab("arquivo", pn1);
@@ -388,6 +389,14 @@ public class Window extends javax.swing.JFrame {
         );
 
         lblInfo.setText("-");
+
+        btnSecSave.setText("S");
+        btnSecSave.setToolTipText("Save");
+        btnSecSave.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                btnSecSaveActionPerformed(evt);
+            }
+        });
 
         menuFile.setText("File");
 
@@ -500,7 +509,11 @@ public class Window extends javax.swing.JFrame {
             .addComponent(pnTag, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
             .addComponent(tabbedPane)
             .addComponent(pnSearch, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
-            .addComponent(lblInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+            .addGroup(layout.createSequentialGroup()
+                .addComponent(lblInfo, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, Short.MAX_VALUE)
+                .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
+                .addComponent(btnSecSave)
+                .addContainerGap())
         );
         layout.setVerticalGroup(
             layout.createParallelGroup(javax.swing.GroupLayout.Alignment.LEADING)
@@ -511,7 +524,9 @@ public class Window extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(tabbedPane)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(lblInfo))
+                .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
+                    .addComponent(lblInfo)
+                    .addComponent(btnSecSave)))
         );
 
         pack();
@@ -565,7 +580,10 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miNewActionPerformed
 
     private void textKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textKeyReleased
-        StyleUtil.update(text);
+
+        if (evt.getModifiers() == 0) {
+            StyleUtil.update(text);
+        }
 
     }//GEN-LAST:event_textKeyReleased
 
@@ -733,12 +751,17 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_btnReplaceActionPerformed
 
+    private void btnSecSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSecSaveActionPerformed
+        saveFile();
+    }//GEN-LAST:event_btnSecSaveActionPerformed
+
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
     private javax.swing.JButton btnAdd;
     private javax.swing.JButton btnCloseSearch;
     private javax.swing.JButton btnReplace;
     private javax.swing.JButton btnReplaceAll;
+    private javax.swing.JButton btnSecSave;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
     private javax.swing.JMenuItem jMenuItem1;
