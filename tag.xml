@@ -37,6 +37,13 @@
         <breakLine>false</breakLine>
     </tags>
     <tags>
+        <id>6</id>
+        <code>[ref-label cap0@]</code>
+        <text>[ref lbl]</text>
+        <breakLine>false</breakLine>
+		<shortCut>F2</shortCut>
+    </tags>	
+    <tags>
         <id>7</id>
         <code>[img @ &quot;@&quot;]</code>
         <text>[img]</text>

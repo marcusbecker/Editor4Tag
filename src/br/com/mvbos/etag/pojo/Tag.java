@@ -33,6 +33,9 @@ public class Tag implements Comparable<Tag>, Serializable {
     @XmlElement
     private String acceptPaste;
 
+    @XmlElement
+    private String shortCut;
+
     public Tag() {
     }
 
@@ -85,6 +88,14 @@ public class Tag implements Comparable<Tag>, Serializable {
 
     public void setAcceptPaste(String acceptPaste) {
         this.acceptPaste = acceptPaste;
+    }
+
+    public String getShortCut() {
+        return shortCut;
+    }
+
+    public void setShortCut(String shortCut) {
+        this.shortCut = shortCut;
     }
 
     @Override

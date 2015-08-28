@@ -198,6 +198,13 @@ public class Window extends javax.swing.JFrame {
                 text.getActionMap().put(link, ac);
             }
 
+            if (t.getShortCut() != null && !t.getShortCut().isEmpty()) {
+                text.getInputMap().put(KeyStroke.getKeyStroke(t.getShortCut()), t.getShortCut());
+                text.getActionMap().put(t.getShortCut(), ac);
+                
+                btn.setToolTipText(btn.getToolTipText() + " or " + t.getShortCut());
+            }
+
             tagMenu.add(item);
             pnTag.add(btn);
         }
