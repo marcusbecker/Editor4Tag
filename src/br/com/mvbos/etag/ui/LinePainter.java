@@ -116,6 +116,7 @@ public class LinePainter
     }
 
     //  Implement CaretListener
+    @Override
     public void caretUpdate(CaretEvent e) {
         resetHighlight();
     }

@@ -318,11 +318,6 @@ public class Window extends javax.swing.JFrame {
 
         text.setFont(new java.awt.Font("Courier New", 0, 12)); // NOI18N
         text.setOpaque(false);
-        text.addKeyListener(new java.awt.event.KeyAdapter() {
-            public void keyReleased(java.awt.event.KeyEvent evt) {
-                textKeyReleased(evt);
-            }
-        });
         spText.setViewportView(text);
 
         javax.swing.GroupLayout pn1Layout = new javax.swing.GroupLayout(pn1);
@@ -586,18 +581,8 @@ public class Window extends javax.swing.JFrame {
 
     }//GEN-LAST:event_miNewActionPerformed
 
-    private void textKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_textKeyReleased
-
-        if (evt.getModifiers() == 0) {
-            StyleUtil.update(text);
-        }
-
-    }//GEN-LAST:event_textKeyReleased
-
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-
         close();
-
     }//GEN-LAST:event_formWindowClosing
 
     private void miRepeatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miRepeatActionPerformed

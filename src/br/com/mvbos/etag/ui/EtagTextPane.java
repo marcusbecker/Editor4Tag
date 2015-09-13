@@ -6,6 +6,7 @@
 package br.com.mvbos.etag.ui;
 
 import br.com.mvbos.etag.Window;
+import br.com.mvbos.etag.core.EditorState;
 import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.StyleUtil;
 import br.com.mvbos.etag.pojo.Tag;
@@ -206,6 +207,30 @@ public class EtagTextPane extends JTextPane {
         addTransferHandler();
 
         this.addCaretListener(hig);
+
+        this.addKeyListener(new java.awt.event.KeyAdapter() {
+            @Override
+            public void keyPressed(java.awt.event.KeyEvent evt) {
+                textKeyPressed(evt);
+            }
+
+            @Override
+            public void keyReleased(KeyEvent evt) {
+                textKeyReleased(evt);
+            }
+        });
+    }
+
+    private void textKeyPressed(KeyEvent evt) {
+        EditorState.keyRelease = false;
+    }
+
+    private void textKeyReleased(KeyEvent evt) {
+
+        if (evt.getModifiers() == 0) {
+            StyleUtil.update(this);
+            EditorState.keyRelease = true;
+        }
     }
 
     class Hig implements CaretListener {
@@ -217,11 +242,13 @@ public class EtagTextPane extends JTextPane {
         }
 
         public void updateRownColumn(int id) {
-            int caretPos = getCaretPosition();
-            colNum = 0;
-            rowNum = (caretPos == 0) ? 1 : 0;
 
             try {
+
+                int caretPos = getCaretPosition();
+                colNum = 0;
+                rowNum = (caretPos == 0) ? 1 : 0;
+
                 int offset = Utilities.getRowStart(t, caretPos);
                 colNum = caretPos - offset + 1;
 
@@ -244,6 +271,9 @@ public class EtagTextPane extends JTextPane {
 
         @Override
         public void caretUpdate(CaretEvent evt) {
+            if (!EditorState.keyRelease) {
+                return;
+            }
 
             updateRownColumn(0);
 
@@ -276,7 +306,7 @@ public class EtagTextPane extends JTextPane {
         }
 
     }
-    private List<ActionListener> actionListenerList = new ArrayList<>(2);
+    private final List<ActionListener> actionListenerList = new ArrayList<>(2);
 
     public void addLineColumnChangeEvent(ActionListener a) {
         actionListenerList.add(a);
