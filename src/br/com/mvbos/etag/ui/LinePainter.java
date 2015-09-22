@@ -93,6 +93,15 @@ public class LinePainter
     private void resetHighlight() {
         //  Use invokeLater to make sure updates to the Document are completed,
         //  otherwise Undo processing causes the modelToView method to loop.
+        //TODO verificar
+        if (lastView == null) {
+            try {
+                Rectangle r = component.modelToView(component.getCaretPosition());
+                lastView = r;
+            } catch (Exception ble) {
+                System.out.println(ble);
+            }
+        }
 
         if (lastView == null) {
             return;

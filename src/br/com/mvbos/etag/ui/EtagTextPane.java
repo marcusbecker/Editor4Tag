@@ -57,17 +57,16 @@ public class EtagTextPane extends JTextPane {
 
     public static final DefaultHighlighter.DefaultHighlightPainter hPainter = new DefaultHighlighter.DefaultHighlightPainter(new Color(57, 105, 138));
     public static final DefaultHighlighter.DefaultHighlightPainter findPainter = new DefaultHighlighter.DefaultHighlightPainter(Color.LIGHT_GRAY); //new DefaultHighlighter.DefaultHighlightPainter(new Color(65, 25, 85));
-    public final LinePainter painter = new LinePainter(this);
+    public LinePainter painter;
 
     public static final String UNDO_ACTION = "UNDO_ACTION";
     public static final String REDO_ACTION = "REDO_ACTION";
 
     private final UndoManager undoMgr = new UndoManager();
 
-    public void goDot(int dot) {
-        getCaret().setDot(dot);
-        hig.updateRownColumn(1);
-    }
+    private final List<ActionListener> actionListenerList = new ArrayList<>(2);
+
+    private MyDocumentListener docListener;
 
     class eTagTransferHandler extends TransferHandler {
 
@@ -219,6 +218,10 @@ public class EtagTextPane extends JTextPane {
                 textKeyReleased(evt);
             }
         });
+
+        painter = new LinePainter(this);
+
+        addDocumentListener();
     }
 
     private void textKeyPressed(KeyEvent evt) {
@@ -306,7 +309,20 @@ public class EtagTextPane extends JTextPane {
         }
 
     }
-    private final List<ActionListener> actionListenerList = new ArrayList<>(2);
+
+    public void goDot(int dot) {
+        getCaret().setDot(dot);
+        hig.updateRownColumn(1);
+    }
+
+    private void addDocumentListener() {
+        docListener = new MyDocumentListener();
+        this.getDocument().addDocumentListener(docListener);
+    }
+
+    public MyDocumentListener getDocumentListener() {
+        return docListener;
+    }
 
     public void addLineColumnChangeEvent(ActionListener a) {
         actionListenerList.add(a);
