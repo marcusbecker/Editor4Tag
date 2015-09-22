@@ -276,35 +276,77 @@ public class Window extends javax.swing.JFrame {
             btn.addActionListener(ac);
             item.addActionListener(ac);
 
+            if (shortcutId == 0) {
+            } else if (shortcutId == 10) {
+                shortcutId = 0;
+                btn.setToolTipText("Shortcut in CTRL + 0");
+            } else {
+                btn.setToolTipText("Shortcut in CTRL + " + shortcutId);
+                shortcutId++;
+            }
+
+            if (t.getShortCut() != null && !t.getShortCut().isEmpty()) {
+                btn.setToolTipText(btn.getToolTipText() + " or " + t.getShortCut());
+            }
+
+            tagMenu.add(item);
+            pnTag.add(btn);
+        }
+    }
+
+    private void addKeyListern(EtagTextPane editor) {
+        int shortcutId = 1;
+
+        for (final Tag t : TagUtil.list()) {
+
+            Action ac = new AbstractAction() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    String sel = getSelected().getSelectedText();
+
+                    if (sel == null) {
+                        int st = getSelected().getCaret().getDot();
+                        int stCode = t.getCode().indexOf(Tag.MARK);
+                        String code = TagUtil.blankMark(t);
+
+                        getSelected().replaceSelection(code);
+                        getSelected().setSelectionStart(st + stCode);
+                        getSelected().setSelectionEnd(getSelected().getSelectionStart() + 1);
+
+                    } else {
+                        String res = TagUtil.process(t, sel);
+                        getSelected().replaceSelection(res);
+                    }
+
+                    StyleUtil.update(getSelected());
+                    //getSelected().requestFocus();
+                    lastTag = t;
+                }
+            };
+
             int code;
             if (shortcutId == 0) {
                 code = -1;
             } else if (shortcutId == 10) {
                 shortcutId = 0;
                 code = KeyEvent.VK_0;
-                btn.setToolTipText("Shortcut in CTRL + 0");
             } else {
                 code = KeyStroke.getKeyStroke(String.valueOf(shortcutId)).getKeyCode();
-                btn.setToolTipText("Shortcut in CTRL + " + shortcutId);
                 shortcutId++;
             }
 
-            /*if (code != -1) {
+            if (code != -1) {
                 final String link = "shortcut_" + shortcutId;
-                getSelected().getInputMap().put(KeyStroke.getKeyStroke(code, InputEvent.CTRL_DOWN_MASK), link);
-                getSelected().getActionMap().put(link, ac);
-            }*/
+                editor.getInputMap().put(KeyStroke.getKeyStroke(code, InputEvent.CTRL_DOWN_MASK), link);
+                editor.getActionMap().put(link, ac);
+            }
 
-            /*if (t.getShortCut() != null && !t.getShortCut().isEmpty()) {
-                getSelected().getInputMap().put(KeyStroke.getKeyStroke(t.getShortCut()), t.getShortCut());
-                getSelected().getActionMap().put(t.getShortCut(), ac);
-
-                btn.setToolTipText(btn.getToolTipText() + " or " + t.getShortCut());
-            }*/
-
-            tagMenu.add(item);
-            pnTag.add(btn);
+            if (t.getShortCut() != null && !t.getShortCut().isEmpty()) {
+                editor.getInputMap().put(KeyStroke.getKeyStroke(t.getShortCut()), t.getShortCut());
+                editor.getActionMap().put(t.getShortCut(), ac);
+            }
         }
+
     }
 
     private void loadTextFromFile(File file) {
@@ -318,6 +360,8 @@ public class Window extends javax.swing.JFrame {
             text.setNewText(FileUtil.read(file));
             text.setCaretPosition(0);
             StyleUtil.update(text);
+            
+            addKeyListern(text);
 
             int sel = tabbedPane.getTabCount() - 1;
             tabbedPane.setTitleAt(sel, file.getName());
