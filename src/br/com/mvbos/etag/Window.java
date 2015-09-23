@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashSet;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -44,6 +45,7 @@ import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
 import javax.swing.Timer;
@@ -127,14 +129,20 @@ public class Window extends javax.swing.JFrame {
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
-        String recent = ConfigUtil.load("recent_file");
-        if (recent != null) {
-            loadTextFromFile(new File(recent));
+        String[] recents = ConfigUtil.loadList("opened_files");
+
+        for (String s : recents) {
+            loadTextFromFile(new File(s));
         }
 
         timer = new Timer(1000, new ActionListener() {
             @Override
             public void actionPerformed(ActionEvent e) {
+
+                if (editors.isEmpty()) {
+                    return;
+                }
+
                 int sel = tabbedPane.getSelectedIndex();
                 EtagTextPane editor = editors.get(sel);
 
@@ -144,7 +152,7 @@ public class Window extends javax.swing.JFrame {
                         int res = JOptionPane.showConfirmDialog(getContentPane(), "Reload file?", "File external change", JOptionPane.YES_NO_OPTION);
 
                         if (res == JOptionPane.YES_OPTION) {
-                            loadTextFromFile(FileUtil.selected);
+                            reloadTextFromFile(sel, editor, FileUtil.selected);
                         } else {
                             editor.getDocumentListener().externalChange();
                         }
@@ -163,7 +171,6 @@ public class Window extends javax.swing.JFrame {
 
         state = MiscUtil.loadState();
         config(state);
-        editors.get(0).requestFocus();
 
         timer.start();
     }
@@ -237,7 +244,11 @@ public class Window extends javax.swing.JFrame {
 
     private EtagTextPane getSelected() {
         int sel = tabbedPane.getSelectedIndex();
-        return editors.get(sel);
+        if (sel != -1) {
+            return editors.get(sel);
+        }
+
+        return null;
     }
 
     private void addTagButtons() {
@@ -251,6 +262,10 @@ public class Window extends javax.swing.JFrame {
             Action ac = new AbstractAction() {
                 @Override
                 public void actionPerformed(ActionEvent evt) {
+                    if (getSelected() == null) {
+                        return;
+                    }
+
                     String sel = getSelected().getSelectedText();
 
                     if (sel == null) {
@@ -349,18 +364,34 @@ public class Window extends javax.swing.JFrame {
 
     }
 
+    private void reloadTextFromFile(int sel, EtagTextPane editor, File selected) {
+        int cp = editor.getCaretPosition();
+
+        editor.setNewText(FileUtil.read(selected));
+        editor.setCaretPosition(cp);
+        StyleUtil.update(editor);
+    }
+
     private void loadTextFromFile(File file) {
 
-        if (FileUtil.isValid(file)) {
+        if (!FileUtil.isValid(file)) {
+            return;
+        }
+
+        if (!recentOpenedFiles.contains(file.getAbsolutePath())) {
             recentFiles.add(file.getAbsolutePath());
             ConfigUtil.saveList("recent_file_list", recentFiles.toArray());
 
+            recentOpenedFiles.add(file.getAbsolutePath());
+            ConfigUtil.saveList("opened_files", recentOpenedFiles.toArray());
+
             EtagTextPane text = addEditor();
 
+            text.setFile(file);
             text.setNewText(FileUtil.read(file));
             text.setCaretPosition(0);
             StyleUtil.update(text);
-            
+
             addKeyListern(text);
 
             int sel = tabbedPane.getTabCount() - 1;
@@ -372,7 +403,35 @@ public class Window extends javax.swing.JFrame {
         }
     }
 
-    private void saveFile() throws HeadlessException {
+    private void saveFile(int sel) throws HeadlessException {
+        EtagTextPane text = editors.get(sel);
+
+        if (text.getFile() == null) {
+            final JFileChooser fc = new JFileChooser();
+            fc.setSelectedFile(new File(tabbedPane.getTitleAt(sel)));
+            int returnVal = fc.showSaveDialog(this);
+            //fileChooser.setDialogTitle("Specify a file to save");
+            if (returnVal == JFileChooser.APPROVE_OPTION) {
+                File file = fc.getSelectedFile();
+                if (FileUtil.save(text.getText(), file)) {
+
+                    tabbedPane.setTitleAt(sel, file.getName());
+                    tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
+
+                    FileUtil.selected = file;
+
+                    text.setFile(file);
+                    text.getDocumentListener().setChange(false);
+                }
+            }
+        } else {
+            if (FileUtil.save(text.getText(), text.getFile())) {
+                text.getDocumentListener().setChange(false);
+            }
+        }
+    }
+
+    private void _saveFile() throws HeadlessException {
         int sel = tabbedPane.getSelectedIndex();
         EtagTextPane text = editors.get(sel);
 
@@ -425,6 +484,7 @@ public class Window extends javax.swing.JFrame {
         miNew = new javax.swing.JMenuItem();
         miOpen = new javax.swing.JMenuItem();
         miSave = new javax.swing.JMenuItem();
+        miClose = new javax.swing.JMenuItem();
         sepRecentFiles = new javax.swing.JPopupMenu.Separator();
         jSeparator4 = new javax.swing.JPopupMenu.Separator();
         miExit = new javax.swing.JMenuItem();
@@ -458,6 +518,12 @@ public class Window extends javax.swing.JFrame {
         });
         pnTag.add(btnAdd, new java.awt.GridBagConstraints());
 
+        tabbedPane.addChangeListener(new javax.swing.event.ChangeListener() {
+            public void stateChanged(javax.swing.event.ChangeEvent evt) {
+                tabbedPaneStateChanged(evt);
+            }
+        });
+
         btnCloseSearch.setText("Close find");
         btnCloseSearch.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
@@ -490,11 +556,11 @@ public class Window extends javax.swing.JFrame {
                 .addContainerGap()
                 .addComponent(btnCloseSearch)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tfSearch)
+                .addComponent(tfSearch, javax.swing.GroupLayout.DEFAULT_SIZE, 206, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(lblReplace, javax.swing.GroupLayout.PREFERRED_SIZE, 60, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tfReplace)
+                .addComponent(tfReplace, javax.swing.GroupLayout.DEFAULT_SIZE, 207, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.UNRELATED)
                 .addComponent(btnReplace)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
@@ -553,6 +619,15 @@ public class Window extends javax.swing.JFrame {
             }
         });
         menuFile.add(miSave);
+
+        miClose.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
+        miClose.setText("Close");
+        miClose.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miCloseActionPerformed(evt);
+            }
+        });
+        menuFile.add(miClose);
         menuFile.add(sepRecentFiles);
         menuFile.add(jSeparator4);
 
@@ -649,7 +724,7 @@ public class Window extends javax.swing.JFrame {
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addComponent(pnSearch, javax.swing.GroupLayout.PREFERRED_SIZE, javax.swing.GroupLayout.DEFAULT_SIZE, javax.swing.GroupLayout.PREFERRED_SIZE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
-                .addComponent(tabbedPane)
+                .addComponent(tabbedPane, javax.swing.GroupLayout.DEFAULT_SIZE, 359, Short.MAX_VALUE)
                 .addPreferredGap(javax.swing.LayoutStyle.ComponentPlacement.RELATED)
                 .addGroup(layout.createParallelGroup(javax.swing.GroupLayout.Alignment.BASELINE)
                     .addComponent(lblInfo)
@@ -682,7 +757,10 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miOpenActionPerformed
 
     private void miSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miSaveActionPerformed
-        saveFile();
+        int sel = tabbedPane.getSelectedIndex();
+        if (sel != -1) {
+            saveFile(sel);
+        }
     }//GEN-LAST:event_miSaveActionPerformed
 
 
@@ -701,7 +779,7 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miNewActionPerformed
 
     private void formWindowClosing(java.awt.event.WindowEvent evt) {//GEN-FIRST:event_formWindowClosing
-        close();
+        closeApplication();
     }//GEN-LAST:event_formWindowClosing
 
     private void miRepeatActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miRepeatActionPerformed
@@ -736,8 +814,11 @@ public class Window extends javax.swing.JFrame {
 
     private void tfSearchKeyReleased(java.awt.event.KeyEvent evt) {//GEN-FIRST:event_tfSearchKeyReleased
 
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
+        EtagTextPane text = getSelected();
+
+        if (text == null) {
+            return;
+        }
 
         String s = tfSearch.getText();
         String t = text.getText();
@@ -760,8 +841,10 @@ public class Window extends javax.swing.JFrame {
 
     private void miFindActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miFindActionPerformed
 
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
+        EtagTextPane text = getSelected();
+        if (text == null) {
+            return;
+        }
 
         pnSearch.setVisible(true);
         tfSearch.requestFocus();
@@ -856,13 +939,16 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_miFontActionPerformed
 
     private void miExitActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miExitActionPerformed
-        close();
+        closeApplication();
     }//GEN-LAST:event_miExitActionPerformed
 
     private void btnReplaceActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnReplaceActionPerformed
 
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
+        EtagTextPane text = getSelected();
+
+        if (text == null) {
+            return;
+        }
 
         text.replaceSelection(tfReplace.getText());
         searchIndex++;
@@ -885,8 +971,23 @@ public class Window extends javax.swing.JFrame {
     }//GEN-LAST:event_btnReplaceActionPerformed
 
     private void btnSecSaveActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btnSecSaveActionPerformed
-        saveFile();
+        int sel = tabbedPane.getSelectedIndex();
+        if (sel != -1) {
+            saveFile(sel);
+        }
     }//GEN-LAST:event_btnSecSaveActionPerformed
+
+    private void miCloseActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miCloseActionPerformed
+        closeTab();
+    }//GEN-LAST:event_miCloseActionPerformed
+
+    private void tabbedPaneStateChanged(javax.swing.event.ChangeEvent evt) {//GEN-FIRST:event_tabbedPaneStateChanged
+        int sel = ((JTabbedPane) evt.getSource()).getSelectedIndex();
+        if (sel != -1) {
+            FileUtil.selected = editors.get(sel).getFile();
+        }
+
+    }//GEN-LAST:event_tabbedPaneStateChanged
 
 
     // Variables declaration - do not modify//GEN-BEGIN:variables
@@ -904,6 +1005,7 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JLabel lblInfo;
     private javax.swing.JLabel lblReplace;
     private javax.swing.JMenu menuFile;
+    private javax.swing.JMenuItem miClose;
     private javax.swing.JMenuItem miExit;
     private javax.swing.JMenuItem miFind;
     private javax.swing.JMenuItem miFont;
@@ -929,26 +1031,57 @@ public class Window extends javax.swing.JFrame {
     private void config(State state) {
         pnSearch.setVisible(state.showFind);
 
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
-
-        text.goDot(state.dot);
+        //TODO usar lista
+        //int sel = tabbedPane.getSelectedIndex();
+        //EtagTextPane text = editors.get(sel);
+        //text.goDot(state.dot);
+        if (!editors.isEmpty()) {
+            editors.get(0).requestFocus();
+        }
 
         if (state.dimension != null) {
             this.setSize(state.dimension);
         }
     }
 
-    private void close() {
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
+    private boolean confirmAndSave(int sel) {
+        int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+        if (res == JOptionPane.YES_OPTION) {
+            saveFile(sel);
+            return true;
+        }
 
-        if (text.getDocumentListener().isChange()) {
-            int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
-            if (res == JOptionPane.YES_OPTION) {
-                saveFile();
-            } else if (res == JOptionPane.CANCEL_OPTION) {
-                return;
+        return false;
+    }
+
+    private void closeTab() {
+        int sel = tabbedPane.getSelectedIndex();
+
+        if (sel != -1) {
+
+            EtagTextPane text = editors.get(sel);
+
+            if (text.getDocumentListener().isChange()) {
+                confirmAndSave(sel);
+            }
+
+            text.clear();
+            editors.remove(sel);
+            tabbedPane.remove(sel);
+
+            recentOpenedFiles.remove(text.getFile().getAbsolutePath());
+            ConfigUtil.saveList("opened_files", recentOpenedFiles.toArray());
+        }
+    }
+
+    private void closeApplication() {
+
+        for (int i = 0; i < editors.size(); i++) {
+            EtagTextPane text = editors.get(i);
+            text.requestFocus();
+
+            if (text.getDocumentListener().isChange()) {
+                confirmAndSave(i);
             }
         }
 
@@ -956,13 +1089,14 @@ public class Window extends javax.swing.JFrame {
 
         state.showFind = pnSearch.isVisible();
         state.dimension = this.getSize();
-        state.dot = text.getCaret().getDot();
+        //state.dot = text.getCaret().getDot();
         MiscUtil.saveState(state);
 
         dispose();
     }
 
     public static Set<String> recentFiles = new HashSet<>(20);
+    public static Set<String> recentOpenedFiles = new LinkedHashSet<>(20);
 
     private void addRecentFileList() {
         int px = 0;
@@ -981,26 +1115,25 @@ public class Window extends javax.swing.JFrame {
             px = menuFile.getItemCount() - 2;
         }
 
-        String recent = ConfigUtil.load("recent_file_list");
-        if (recent != null && !recent.isEmpty()) {
-            String[] files = recent.split(ConfigUtil.FILE_LIST_SEP);
-            for (String s : files) {
-                final File f = new File(s);
-                if (!f.exists() || f.isDirectory() || recentFiles.contains(f.getAbsolutePath())) {
-                    continue;
-                }
+        String[] files = ConfigUtil.loadList("recent_file_list");
 
-                JMenuItem item = new JMenuItem(f.getName());
-                recentFiles.add(f.getAbsolutePath());
-                menuFile.insert(item, px++);
-                item.addActionListener(new ActionListener() {
-                    @Override
-                    public void actionPerformed(ActionEvent evt) {
-                        verifyChangeAndOpenFile(f);
-                    }
-                });
+        for (String s : files) {
+            final File f = new File(s);
+            if (!f.exists() || f.isDirectory() || recentFiles.contains(f.getAbsolutePath())) {
+                continue;
             }
+
+            JMenuItem item = new JMenuItem(f.getName());
+            recentFiles.add(f.getAbsolutePath());
+            menuFile.insert(item, px++);
+            item.addActionListener(new ActionListener() {
+                @Override
+                public void actionPerformed(ActionEvent evt) {
+                    verifyChangeAndOpenFile(f);
+                }
+            });
         }
+
     }
 
     private void verifyChangeAndOpenFile(File file) {

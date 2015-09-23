@@ -68,6 +68,9 @@ public class EtagTextPane extends JTextPane {
 
     private MyDocumentListener docListener;
 
+    public void clear() {
+    }
+
     class eTagTransferHandler extends TransferHandler {
 
         private final EtagTextPane text;
@@ -185,6 +188,8 @@ public class EtagTextPane extends JTextPane {
 
         return false;
     }
+
+    private File file;
 
     public EtagTextPane() {
         super();
@@ -339,6 +344,14 @@ public class EtagTextPane extends JTextPane {
     public void setNewText(String t) {
         super.setText(t);
         undoMgr.discardAllEdits();
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    public void setFile(File file) {
+        this.file = file;
     }
 
     @Override
