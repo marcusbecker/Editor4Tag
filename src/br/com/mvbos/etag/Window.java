@@ -5,9 +5,9 @@
  */
 package br.com.mvbos.etag;
 
-import br.com.mvbos.etag.core.ConfigUtil;
 import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.MiscUtil;
+import br.com.mvbos.etag.core.RecentFileUtils;
 import br.com.mvbos.etag.core.StyleUtil;
 import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
@@ -30,10 +30,9 @@ import java.awt.event.KeyEvent;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Set;
+import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.swing.AbstractAction;
@@ -90,6 +89,7 @@ public class Window extends javax.swing.JFrame {
         });
     }
 
+    private final Map<String, Short> filePx = new HashMap<>(10);
     private final List<EtagTextPane> editors = new ArrayList<>(10);
 
     private EtagTextPane addEditor() {
@@ -129,7 +129,7 @@ public class Window extends javax.swing.JFrame {
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
 
-        String[] recents = ConfigUtil.loadList("opened_files");
+        String[] recents = RecentFileUtils.getRecentsOpeneds();
 
         for (String s : recents) {
             loadTextFromFile(new File(s));
@@ -173,73 +173,6 @@ public class Window extends javax.swing.JFrame {
         config(state);
 
         timer.start();
-    }
-
-    private void _addTagButtons(final JTextPane text) {
-        int shortcutId = 1;
-
-        for (final Tag t : TagUtil.list()) {
-
-            JButton btn = new JButton(t.getText());
-            JMenuItem item = new JMenuItem(t.getText());
-
-            Action ac = new AbstractAction() {
-                @Override
-                public void actionPerformed(ActionEvent evt) {
-                    String sel = text.getSelectedText();
-
-                    if (sel == null) {
-                        int st = text.getCaret().getDot();
-                        int stCode = t.getCode().indexOf(Tag.MARK);
-                        String code = TagUtil.blankMark(t);
-
-                        text.replaceSelection(code);
-                        text.setSelectionStart(st + stCode);
-                        text.setSelectionEnd(text.getSelectionStart() + 1);
-
-                    } else {
-                        String res = TagUtil.process(t, sel);
-                        text.replaceSelection(res);
-                    }
-
-                    StyleUtil.update(text);
-                    text.requestFocus();
-                    lastTag = t;
-                }
-            };
-
-            btn.addActionListener(ac);
-            item.addActionListener(ac);
-
-            int code;
-            if (shortcutId == 0) {
-                code = -1;
-            } else if (shortcutId == 10) {
-                shortcutId = 0;
-                code = KeyEvent.VK_0;
-                btn.setToolTipText("Shortcut in CTRL + 0");
-            } else {
-                code = KeyStroke.getKeyStroke(String.valueOf(shortcutId)).getKeyCode();
-                btn.setToolTipText("Shortcut in CTRL + " + shortcutId);
-                shortcutId++;
-            }
-
-            if (code != -1) {
-                final String link = "shortcut_" + shortcutId;
-                text.getInputMap().put(KeyStroke.getKeyStroke(code, InputEvent.CTRL_DOWN_MASK), link);
-                text.getActionMap().put(link, ac);
-            }
-
-            if (t.getShortCut() != null && !t.getShortCut().isEmpty()) {
-                text.getInputMap().put(KeyStroke.getKeyStroke(t.getShortCut()), t.getShortCut());
-                text.getActionMap().put(t.getShortCut(), ac);
-
-                btn.setToolTipText(btn.getToolTipText() + " or " + t.getShortCut());
-            }
-
-            tagMenu.add(item);
-            pnTag.add(btn);
-        }
     }
 
     private EtagTextPane getSelected() {
@@ -378,12 +311,13 @@ public class Window extends javax.swing.JFrame {
             return;
         }
 
-        if (!recentOpenedFiles.contains(file.getAbsolutePath())) {
-            recentFiles.add(file.getAbsolutePath());
-            ConfigUtil.saveList("recent_file_list", recentFiles.toArray());
+        if (filePx.containsKey(file.getAbsolutePath())) {
+            short sel = filePx.get(file.getAbsolutePath());
+            tabbedPane.setSelectedIndex(sel);
 
-            recentOpenedFiles.add(file.getAbsolutePath());
-            ConfigUtil.saveList("opened_files", recentOpenedFiles.toArray());
+        } else {
+
+            RecentFileUtils.add(file.getAbsolutePath());
 
             EtagTextPane text = addEditor();
 
@@ -394,12 +328,16 @@ public class Window extends javax.swing.JFrame {
 
             addKeyListern(text);
 
-            int sel = tabbedPane.getTabCount() - 1;
+            short sel = (short) (tabbedPane.getTabCount() - 1);
             tabbedPane.setTitleAt(sel, file.getName());
             tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
             tabbedPane.setSelectedIndex(sel);
 
             text.getDocumentListener().setChange(false);
+
+            filePx.put(file.getAbsolutePath(), sel);
+
+            FileUtil.selected = file;
         }
     }
 
@@ -426,33 +364,6 @@ public class Window extends javax.swing.JFrame {
             }
         } else {
             if (FileUtil.save(text.getText(), text.getFile())) {
-                text.getDocumentListener().setChange(false);
-            }
-        }
-    }
-
-    private void _saveFile() throws HeadlessException {
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
-
-        if (FileUtil.selected == null) {
-            final JFileChooser fc = new JFileChooser();
-            fc.setSelectedFile(new File(tabbedPane.getTitleAt(sel)));
-            int returnVal = fc.showSaveDialog(this);
-            //fileChooser.setDialogTitle("Specify a file to save");
-            if (returnVal == JFileChooser.APPROVE_OPTION) {
-                File file = fc.getSelectedFile();
-                if (FileUtil.save(text.getText(), file)) {
-                    FileUtil.selected = file;
-
-                    tabbedPane.setTitleAt(sel, file.getName());
-                    tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
-
-                    text.getDocumentListener().setChange(false);
-                }
-            }
-        } else {
-            if (FileUtil.save(text.getText(), FileUtil.selected)) {
                 text.getDocumentListener().setChange(false);
             }
         }
@@ -1069,8 +980,7 @@ public class Window extends javax.swing.JFrame {
             editors.remove(sel);
             tabbedPane.remove(sel);
 
-            recentOpenedFiles.remove(text.getFile().getAbsolutePath());
-            ConfigUtil.saveList("opened_files", recentOpenedFiles.toArray());
+            RecentFileUtils.removeOpened(text.getFile().getAbsolutePath());
         }
     }
 
@@ -1095,9 +1005,6 @@ public class Window extends javax.swing.JFrame {
         dispose();
     }
 
-    public static Set<String> recentFiles = new HashSet<>(20);
-    public static Set<String> recentOpenedFiles = new LinkedHashSet<>(20);
-
     private void addRecentFileList() {
         int px = 0;
         menuFile.getTreeLock();
@@ -1115,16 +1022,16 @@ public class Window extends javax.swing.JFrame {
             px = menuFile.getItemCount() - 2;
         }
 
-        String[] files = ConfigUtil.loadList("recent_file_list");
+        String[] files = RecentFileUtils.getRecentsList();
 
         for (String s : files) {
             final File f = new File(s);
-            if (!f.exists() || f.isDirectory() || recentFiles.contains(f.getAbsolutePath())) {
+            if (!f.exists() || f.isDirectory() /*|| recentFiles.contains(f.getAbsolutePath())*/) {
                 continue;
             }
 
             JMenuItem item = new JMenuItem(f.getName());
-            recentFiles.add(f.getAbsolutePath());
+            //recentFiles.add(f.getAbsolutePath());
             menuFile.insert(item, px++);
             item.addActionListener(new ActionListener() {
                 @Override
