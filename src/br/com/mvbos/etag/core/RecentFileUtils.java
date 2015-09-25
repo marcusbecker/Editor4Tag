@@ -97,7 +97,7 @@ public class RecentFileUtils {
             r.opened = true;
             list.add(r);
         }
-        
+
         persist();
     }
 
@@ -124,8 +124,8 @@ public class RecentFileUtils {
 
     public static void removeOpened(String absolutePath) {
         Recent r = new RecentFileUtils().new Recent(absolutePath);
-        
-        if(list.contains(r)){
+
+        if (list.contains(r)) {
             list.remove(r);
             persist();
         }

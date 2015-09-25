@@ -7,10 +7,13 @@ package br.com.mvbos.etag;
 
 import br.com.mvbos.etag.core.FileUtil;
 import br.com.mvbos.etag.core.MiscUtil;
-import br.com.mvbos.etag.core.RecentFileUtils;
+
 import br.com.mvbos.etag.core.StyleUtil;
 import br.com.mvbos.etag.pojo.Tag;
 import br.com.mvbos.etag.core.TagUtil;
+import br.com.mvbos.etag.plugin.PluginInterface;
+import br.com.mvbos.etag.plugin.ReOpenPlugin;
+import br.com.mvbos.etag.plugin.RecentFilePlugin;
 import br.com.mvbos.etag.pojo.State;
 import br.com.mvbos.etag.ui.EtagTextPane;
 import br.com.mvbos.etag.ui.GoLine;
@@ -47,6 +50,7 @@ import javax.swing.JScrollPane;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
+import javax.swing.SwingUtilities;
 import javax.swing.Timer;
 import javax.swing.text.DefaultHighlighter.DefaultHighlightPainter;
 import javax.swing.text.Highlighter;
@@ -56,6 +60,8 @@ import javax.swing.text.Highlighter;
  * @author Marcus Becker
  */
 public class Window extends javax.swing.JFrame {
+
+    public static Window w;
 
     //TODO replace all
     //TODO tranferir para EtagTextPane
@@ -71,6 +77,8 @@ public class Window extends javax.swing.JFrame {
     private GoLine goLine;
 
     private final Clipboard clipboard;
+
+    private List<PluginInterface> plugns = new ArrayList<>(5);
 
     private void addLineColumnChangeEvent(EtagTextPane text) {
         text.addLineColumnChangeEvent(new ActionListener() {
@@ -125,15 +133,24 @@ public class Window extends javax.swing.JFrame {
 
         //addEditor();
         addTagButtons();
-        addRecentFileList();
+
+        SwingUtilities.invokeLater(new Runnable() {
+
+            @Override
+            public void run() {
+                //TODO work with plugin
+                plugns.add(new RecentFilePlugin());
+                plugns.add(new ReOpenPlugin());
+
+                for (PluginInterface p : plugns) {
+                    p.init();
+                }
+
+                Window.w.setVisible(true);
+            }
+        });
 
         clipboard = Toolkit.getDefaultToolkit().getSystemClipboard();
-
-        String[] recents = RecentFileUtils.getRecentsOpeneds();
-
-        for (String s : recents) {
-            loadTextFromFile(new File(s));
-        }
 
         timer = new Timer(1000, new ActionListener() {
             @Override
@@ -305,37 +322,39 @@ public class Window extends javax.swing.JFrame {
         StyleUtil.update(editor);
     }
 
-    private void loadTextFromFile(File file) {
+    public static void loadTextFromFile(File file) {
 
         if (!FileUtil.isValid(file)) {
             return;
         }
 
-        if (filePx.containsKey(file.getAbsolutePath())) {
-            short sel = filePx.get(file.getAbsolutePath());
-            tabbedPane.setSelectedIndex(sel);
+        if (Window.w.filePx.containsKey(file.getAbsolutePath())) {
+            short sel = Window.w.filePx.get(file.getAbsolutePath());
+            Window.w.tabbedPane.setSelectedIndex(sel);
 
         } else {
 
-            RecentFileUtils.add(file.getAbsolutePath());
+            for (PluginInterface p : Window.w.plugns) {
+                p.fileOpened(file);
+            }
 
-            EtagTextPane text = addEditor();
+            EtagTextPane text = Window.w.addEditor();
 
             text.setFile(file);
             text.setNewText(FileUtil.read(file));
             text.setCaretPosition(0);
             StyleUtil.update(text);
 
-            addKeyListern(text);
+            Window.w.addKeyListern(text);
 
-            short sel = (short) (tabbedPane.getTabCount() - 1);
-            tabbedPane.setTitleAt(sel, file.getName());
-            tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
-            tabbedPane.setSelectedIndex(sel);
+            short sel = (short) (Window.w.tabbedPane.getTabCount() - 1);
+            Window.w.tabbedPane.setTitleAt(sel, file.getName());
+            Window.w.tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
+            Window.w.tabbedPane.setSelectedIndex(sel);
 
             text.getDocumentListener().setChange(false);
 
-            filePx.put(file.getAbsolutePath(), sel);
+            Window.w.filePx.put(file.getAbsolutePath(), sel);
 
             FileUtil.selected = file;
         }
@@ -980,7 +999,9 @@ public class Window extends javax.swing.JFrame {
             editors.remove(sel);
             tabbedPane.remove(sel);
 
-            RecentFileUtils.removeOpened(text.getFile().getAbsolutePath());
+            for (PluginInterface p : Window.w.plugns) {
+                p.fileClosed(text.getFile());
+            }
         }
     }
 
@@ -1005,26 +1026,41 @@ public class Window extends javax.swing.JFrame {
         dispose();
     }
 
-    private void addRecentFileList() {
-        int px = 0;
-        menuFile.getTreeLock();
-        for (int i = 0; i < menuFile.getComponents().length; i++) {
+    public enum Menu {
 
-            Component c = menuFile.getComponents()[i];
-            System.out.println("c.getName() " + c.getName());
-            if (c.getName().equals("sepRecentFiles")) {
+        FILE, EDIT, TAG
+    }
+
+    public enum SubMenu {
+
+        MAIN, RECENT_FILES
+    }
+
+    public static short getMenuPosition(Menu m, SubMenu sm) {
+        short px = 0;
+        Window.w.menuFile.getTreeLock();
+
+        for (short i = 0; i < Window.w.menuFile.getComponents().length; i++) {
+
+            Component c = Window.w.menuFile.getComponents()[i];
+
+            if (sm == SubMenu.MAIN && c.getName().equals("sepRecentFiles")) {
                 px = i;
                 break;
             }
         }
 
+        return px;
+    }
+
+    public static void addOnMenu(Menu menu, SubMenu sm, String[] itens) {
+        short px = Window.getMenuPosition(menu, sm);
+
         if (px == 0) {
-            px = menuFile.getItemCount() - 2;
+            px = (short) (Window.w.menuFile.getItemCount() - 2);
         }
 
-        String[] files = RecentFileUtils.getRecentsList();
-
-        for (String s : files) {
+        for (String s : itens) {
             final File f = new File(s);
             if (!f.exists() || f.isDirectory() /*|| recentFiles.contains(f.getAbsolutePath())*/) {
                 continue;
@@ -1032,15 +1068,17 @@ public class Window extends javax.swing.JFrame {
 
             JMenuItem item = new JMenuItem(f.getName());
             //recentFiles.add(f.getAbsolutePath());
-            menuFile.insert(item, px++);
-            item.addActionListener(new ActionListener() {
-                @Override
-                public void actionPerformed(ActionEvent evt) {
-                    verifyChangeAndOpenFile(f);
-                }
-            });
-        }
+            Window.w.menuFile.insert(item, px++);
 
+            if (sm == SubMenu.RECENT_FILES) {
+                item.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent evt) {
+                        Window.w.verifyChangeAndOpenFile(f);
+                    }
+                });
+            }
+        }
     }
 
     private void verifyChangeAndOpenFile(File file) {
