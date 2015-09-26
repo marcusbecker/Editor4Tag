@@ -6,6 +6,7 @@
 package br.com.mvbos.etag.pojo;
 
 import java.awt.Dimension;
+import java.awt.Point;
 import java.io.Serializable;
 
 /**
@@ -19,5 +20,8 @@ public class State implements Serializable {
     public boolean showFind;
     public Dimension dimension;
     public int dot;
+    public int extendedState;
+    public int editorIndex;
+    public Point location;
 
 }

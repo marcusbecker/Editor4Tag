@@ -96,16 +96,19 @@ public class TagUtil {
             f = tagFile;
         }
 
+        if (!f.exists()) {
+            return new TagList();
+        }
+
         try {
             JAXBContext context = JAXBContext.newInstance(TagList.class);
             Unmarshaller un = context.createUnmarshaller();
             TagList tags = (TagList) un.unmarshal(f);
 
             /*for (int i = 0; i < tags.getTags().size(); i++) {
-                Tag t = tags.getTags().get(i);
-                t.setId(i + 1);
-            }*/
-
+             Tag t = tags.getTags().get(i);
+             t.setId(i + 1);
+             }*/
             return tags;
         } catch (JAXBException e) {
             e.printStackTrace();
