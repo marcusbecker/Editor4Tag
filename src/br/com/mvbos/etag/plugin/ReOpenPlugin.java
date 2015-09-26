@@ -19,8 +19,8 @@ public class ReOpenPlugin implements PluginInterface {
     public void init() {
         String[] recents = RecentFileUtils.getRecentsOpeneds();
 
-        for (String s : recents) {
-            Window.loadTextFromFile(new File(s));
+        for (int i = recents.length - 1; i >= 0; i--) {
+            Window.loadTextFromFile(new File(recents[i]));
         }
     }
 

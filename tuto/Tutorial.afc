@@ -1,0 +1,9 @@
+[chapter Tutorial - Editor4Tag]
+
+**Editor4Tag** é um simples editor de texto com suporte à criação de ::Tags:: personalizadas.
+Criado inicialmente para facilitar a migração de diversos textos escritos 
+no Word para o formato do Tubaina (https://github.com/caelum/tubaina). 
+Mas é extensível e configurável o suficiente para ser utilizado com outros tipos de Tags, 
+como por exemplo, HTML.
+
+[img print.png "Print"]

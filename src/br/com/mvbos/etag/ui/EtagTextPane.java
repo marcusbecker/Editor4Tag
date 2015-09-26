@@ -131,8 +131,11 @@ public class EtagTextPane extends JTextPane {
                 }
 
                 replaceSelection(s);
-                //getDocument().insertString(getCaretPosition(), o.toString(), null);
 
+                //TODO replaceSelection add \r char and cause bugs on style selection
+                setText(getText().replaceAll("\r", ""));
+
+                //getDocument().insertString(getCaretPosition(), o.toString(), null);
             } else if (flavor == DataFlavor.javaFileListFlavor) {
                 List<File> files = (List<File>) o;
                 StringBuilder sb = new StringBuilder();
@@ -224,8 +227,7 @@ public class EtagTextPane extends JTextPane {
             }
         });
 
-        painter = new LinePainter(this);
-
+        //painter = new LinePainter(this);
         addDocumentListener();
     }
 
@@ -352,6 +354,10 @@ public class EtagTextPane extends JTextPane {
 
     public void setFile(File file) {
         this.file = file;
+    }
+
+    public boolean isTemporary() {
+        return getFile() == null;
     }
 
     @Override

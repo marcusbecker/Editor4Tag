@@ -22,6 +22,7 @@ import br.com.mvbos.etag.ui.selector.IMyFontSelector;
 import br.com.mvbos.etag.ui.selector.MyFontSelector;
 import java.awt.Component;
 import java.awt.HeadlessException;
+import java.awt.Point;
 import java.awt.Toolkit;
 import java.awt.datatransfer.Clipboard;
 import java.awt.datatransfer.DataFlavor;
@@ -43,6 +44,7 @@ import javax.swing.Action;
 import javax.swing.GroupLayout;
 import javax.swing.JButton;
 import javax.swing.JFileChooser;
+import javax.swing.JFrame;
 import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
@@ -144,6 +146,17 @@ public class Window extends javax.swing.JFrame {
 
                 for (PluginInterface p : plugns) {
                     p.init();
+                }
+
+                if (!editors.isEmpty()) {
+
+                    if (state.editorIndex > -1 && state.editorIndex < editors.size()) {
+                        tabbedPane.setSelectedIndex(state.editorIndex);
+                        editors.get(state.editorIndex).requestFocus();
+                    } else {
+                        tabbedPane.setSelectedIndex(0);
+                        editors.get(0).requestFocus();
+                    }
                 }
 
                 Window.w.setVisible(true);
@@ -552,6 +565,7 @@ public class Window extends javax.swing.JFrame {
 
         miClose.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_W, java.awt.event.InputEvent.CTRL_MASK));
         miClose.setText("Close");
+        miClose.setToolTipText("Close selected tab");
         miClose.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 miCloseActionPerformed(evt);
@@ -958,30 +972,30 @@ public class Window extends javax.swing.JFrame {
         text.setFont(FontUtil.load());
     }
 
-    private void config(State state) {
-        pnSearch.setVisible(state.showFind);
+    private void config(State st) {
+        pnSearch.setVisible(st.showFind);
 
-        //TODO usar lista
-        //int sel = tabbedPane.getSelectedIndex();
-        //EtagTextPane text = editors.get(sel);
-        //text.goDot(state.dot);
-        if (!editors.isEmpty()) {
-            editors.get(0).requestFocus();
-        }
-
-        if (state.dimension != null) {
-            this.setSize(state.dimension);
+        if (st.dimension != null) {
+            if (st.extendedState == JFrame.NORMAL) {
+                this.setSize(st.dimension);
+                this.setLocation(st.location != null ? st.location : new Point(0, 0));
+            } else {
+                this.setExtendedState(st.extendedState);
+            }
+        } else {
+            this.setExtendedState(st.extendedState);
         }
     }
 
-    private boolean confirmAndSave(int sel) {
+    private short confirmAndSave(int sel) {
         int res = JOptionPane.showConfirmDialog(this, "Save changes?", "The text has changed.", JOptionPane.YES_NO_CANCEL_OPTION);
+
         if (res == JOptionPane.YES_OPTION) {
             saveFile(sel);
-            return true;
+            return 0;
         }
 
-        return false;
+        return (short) res;
     }
 
     private void closeTab() {
@@ -992,16 +1006,22 @@ public class Window extends javax.swing.JFrame {
             EtagTextPane text = editors.get(sel);
 
             if (text.getDocumentListener().isChange()) {
-                confirmAndSave(sel);
+                if (confirmAndSave(sel) == JOptionPane.CANCEL_OPTION) {
+                    return;
+                }
             }
 
-            text.clear();
             editors.remove(sel);
             tabbedPane.remove(sel);
 
-            for (PluginInterface p : Window.w.plugns) {
-                p.fileClosed(text.getFile());
+            if (!text.isTemporary()) {
+                filePx.remove(text.getFile().getAbsolutePath());
+                for (PluginInterface p : Window.w.plugns) {
+                    p.fileClosed(text.getFile());
+                }
             }
+
+            text.clear();
         }
     }
 
@@ -1009,17 +1029,19 @@ public class Window extends javax.swing.JFrame {
 
         for (int i = 0; i < editors.size(); i++) {
             EtagTextPane text = editors.get(i);
-            text.requestFocus();
 
             if (text.getDocumentListener().isChange()) {
+                text.requestFocus();
                 confirmAndSave(i);
             }
         }
 
         timer.stop();
-
         state.showFind = pnSearch.isVisible();
         state.dimension = this.getSize();
+        state.extendedState = this.getExtendedState();
+        state.editorIndex = tabbedPane.getSelectedIndex();
+        state.location = this.getLocation();
         //state.dot = text.getCaret().getDot();
         MiscUtil.saveState(state);
 
