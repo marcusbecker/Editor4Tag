@@ -41,6 +41,7 @@ import javax.swing.event.UndoableEditEvent;
 import javax.swing.event.UndoableEditListener;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.BadLocationException;
+import javax.swing.text.DefaultEditorKit;
 import javax.swing.text.DefaultHighlighter;
 import javax.swing.text.Highlighter;
 import javax.swing.text.StyledDocument;
@@ -129,13 +130,9 @@ public class EtagTextPane extends JTextPane {
                 if (replaceQuote) {
                     s = s.replaceAll("“", "\"").replaceAll("”", "\"");
                 }
-
-                replaceSelection(s);
-
-                //TODO replaceSelection add \r char and cause bugs on style selection
-                //setText(getText().replaceAll("\r", ""));
-
-                //getDocument().insertString(getCaretPosition(), o.toString(), null);
+                
+                replaceSelection(s.replaceAll("\r", ""));
+                
             } else if (flavor == DataFlavor.javaFileListFlavor) {
                 List<File> files = (List<File>) o;
                 StringBuilder sb = new StringBuilder();
@@ -229,6 +226,9 @@ public class EtagTextPane extends JTextPane {
 
         //painter = new LinePainter(this);
         addDocumentListener();
+        
+        //Prevents add carriage return on paste the text
+        getDocument().putProperty(DefaultEditorKit.EndOfLineStringProperty, "\n");
     }
 
     private void textKeyPressed(KeyEvent evt) {
