@@ -133,7 +133,7 @@ public class EtagTextPane extends JTextPane {
                 replaceSelection(s);
 
                 //TODO replaceSelection add \r char and cause bugs on style selection
-                setText(getText().replaceAll("\r", ""));
+                //setText(getText().replaceAll("\r", ""));
 
                 //getDocument().insertString(getCaretPosition(), o.toString(), null);
             } else if (flavor == DataFlavor.javaFileListFlavor) {

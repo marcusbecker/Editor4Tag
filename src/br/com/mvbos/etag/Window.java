@@ -99,16 +99,16 @@ public class Window extends javax.swing.JFrame {
         });
     }
 
-    private final Map<String, Short> filePx = new HashMap<>(10);
+    private final Map<String, Short> filePosition = new HashMap<>(10);
     private final List<EtagTextPane> editors = new ArrayList<>(10);
 
-    private EtagTextPane addEditor() {
+    private EtagTextPane addEditor(String tabName) {
         JPanel pn = new JPanel();
         EtagTextPane editor = new EtagTextPane();
         JScrollPane spText = new JScrollPane();
         spText.setViewportView(editor);
         editors.add(editor);
-        tabbedPane.addTab("arquivo", pn);
+        tabbedPane.addTab(tabName, pn);
 
         final GroupLayout pnLayout = new GroupLayout(pn);
         pn.setLayout(pnLayout);
@@ -341,8 +341,8 @@ public class Window extends javax.swing.JFrame {
             return;
         }
 
-        if (Window.w.filePx.containsKey(file.getAbsolutePath())) {
-            short sel = Window.w.filePx.get(file.getAbsolutePath());
+        if (Window.w.filePosition.containsKey(file.getAbsolutePath())) {
+            short sel = Window.w.filePosition.get(file.getAbsolutePath());
             Window.w.tabbedPane.setSelectedIndex(sel);
 
         } else {
@@ -351,7 +351,7 @@ public class Window extends javax.swing.JFrame {
                 p.fileOpened(file);
             }
 
-            EtagTextPane text = Window.w.addEditor();
+            EtagTextPane text = Window.w.addEditor(file.getName());
 
             text.setFile(file);
             text.setNewText(FileUtil.read(file));
@@ -367,31 +367,41 @@ public class Window extends javax.swing.JFrame {
 
             text.getDocumentListener().setChange(false);
 
-            Window.w.filePx.put(file.getAbsolutePath(), sel);
+            Window.w.filePosition.put(file.getAbsolutePath(), sel);
 
             FileUtil.selected = file;
         }
     }
 
-    private void saveFile(int sel) throws HeadlessException {
-        EtagTextPane text = editors.get(sel);
+    private void saveFile(int tabSelected) throws HeadlessException {
+        EtagTextPane text = editors.get(tabSelected);
 
         if (text.getFile() == null) {
-            final JFileChooser fc = new JFileChooser();
-            fc.setSelectedFile(new File(tabbedPane.getTitleAt(sel)));
+            String dir = "";
+            for (EtagTextPane e : editors) {
+                if (e.getFile() != null) {
+                    dir = e.getFile().getAbsolutePath();
+                    break;
+                }
+            }
+
+            JFileChooser fc = new JFileChooser(dir);
+            fc.setSelectedFile(new File(tabbedPane.getTitleAt(tabSelected)));
             int returnVal = fc.showSaveDialog(this);
             //fileChooser.setDialogTitle("Specify a file to save");
             if (returnVal == JFileChooser.APPROVE_OPTION) {
                 File file = fc.getSelectedFile();
                 if (FileUtil.save(text.getText(), file)) {
 
-                    tabbedPane.setTitleAt(sel, file.getName());
-                    tabbedPane.setToolTipTextAt(sel, file.getAbsolutePath());
+                    tabbedPane.setTitleAt(tabSelected, file.getName());
+                    tabbedPane.setToolTipTextAt(tabSelected, file.getAbsolutePath());
 
                     FileUtil.selected = file;
 
                     text.setFile(file);
                     text.getDocumentListener().setChange(false);
+                    
+                    Window.w.filePosition.put(file.getAbsolutePath(), (short) tabSelected);
                 }
             }
         } else {
@@ -433,13 +443,12 @@ public class Window extends javax.swing.JFrame {
         miExit = new javax.swing.JMenuItem();
         editMenu = new javax.swing.JMenu();
         miPaste = new javax.swing.JMenuItem();
+        miRepeat = new javax.swing.JMenuItem();
         jSeparator2 = new javax.swing.JPopupMenu.Separator();
         miFind = new javax.swing.JMenuItem();
         miGoLine = new javax.swing.JMenuItem();
         jSeparator3 = new javax.swing.JPopupMenu.Separator();
         miFont = new javax.swing.JMenuItem();
-        miRepeat = new javax.swing.JMenuItem();
-        jMenuItem1 = new javax.swing.JMenuItem();
         tagMenu = new javax.swing.JMenu();
 
         setDefaultCloseOperation(javax.swing.WindowConstants.DO_NOTHING_ON_CLOSE);
@@ -454,6 +463,7 @@ public class Window extends javax.swing.JFrame {
         pnTag.setLayout(new java.awt.GridBagLayout());
 
         btnAdd.setText("+");
+        btnAdd.setEnabled(false);
         btnAdd.addActionListener(new java.awt.event.ActionListener() {
             public void actionPerformed(java.awt.event.ActionEvent evt) {
                 btnAddActionPerformed(evt);
@@ -595,6 +605,15 @@ public class Window extends javax.swing.JFrame {
             }
         });
         editMenu.add(miPaste);
+
+        miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
+        miRepeat.setText("Repeat tag");
+        miRepeat.addActionListener(new java.awt.event.ActionListener() {
+            public void actionPerformed(java.awt.event.ActionEvent evt) {
+                miRepeatActionPerformed(evt);
+            }
+        });
+        editMenu.add(miRepeat);
         editMenu.add(jSeparator2);
 
         miFind.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_F, java.awt.event.InputEvent.CTRL_MASK));
@@ -623,23 +642,6 @@ public class Window extends javax.swing.JFrame {
             }
         });
         editMenu.add(miFont);
-
-        miRepeat.setAccelerator(javax.swing.KeyStroke.getKeyStroke(java.awt.event.KeyEvent.VK_R, java.awt.event.InputEvent.CTRL_MASK));
-        miRepeat.setText("Repeat tag");
-        miRepeat.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                miRepeatActionPerformed(evt);
-            }
-        });
-        editMenu.add(miRepeat);
-
-        jMenuItem1.setText("to URL");
-        jMenuItem1.addActionListener(new java.awt.event.ActionListener() {
-            public void actionPerformed(java.awt.event.ActionEvent evt) {
-                jMenuItem1ActionPerformed(evt);
-            }
-        });
-        editMenu.add(jMenuItem1);
 
         fileMenu.add(editMenu);
 
@@ -682,20 +684,6 @@ public class Window extends javax.swing.JFrame {
         // TODO add your handling code here:
     }//GEN-LAST:event_btnAddActionPerformed
 
-    private void jMenuItem1ActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_jMenuItem1ActionPerformed
-
-        int sel = tabbedPane.getSelectedIndex();
-        EtagTextPane text = editors.get(sel);
-
-        String selection = text.getSelectedText();
-        if (selection != null) {
-            String s = selection;
-            s = s.toLowerCase().replaceAll(" ", "_").replaceAll("\\.", "_");
-            text.replaceSelection(s);
-        }
-
-    }//GEN-LAST:event_jMenuItem1ActionPerformed
-
     private void miOpenActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miOpenActionPerformed
         verifyChangeAndOpenFile(null);
     }//GEN-LAST:event_miOpenActionPerformed
@@ -710,15 +698,8 @@ public class Window extends javax.swing.JFrame {
 
     private void miNewActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_miNewActionPerformed
 
-        EtagTextPane text = addEditor();
-
-        //FileUtil.selected = null;
-        //docListener.setChange(false);
-        //TODO resetar
-        //text.setText(null);
-        int sel = tabbedPane.getSelectedIndex();
-        tabbedPane.setTitleAt(sel, "New file.txt");
-        tabbedPane.setToolTipTextAt(sel, null);
+        EtagTextPane text = Window.w.addEditor("New file");
+        tabbedPane.setSelectedIndex(tabbedPane.getTabCount() - 1);
 
     }//GEN-LAST:event_miNewActionPerformed
 
@@ -942,7 +923,6 @@ public class Window extends javax.swing.JFrame {
     private javax.swing.JButton btnSecSave;
     private javax.swing.JMenu editMenu;
     private javax.swing.JMenuBar fileMenu;
-    private javax.swing.JMenuItem jMenuItem1;
     private javax.swing.JPopupMenu.Separator jSeparator2;
     private javax.swing.JPopupMenu.Separator jSeparator3;
     private javax.swing.JPopupMenu.Separator jSeparator4;
@@ -1015,7 +995,7 @@ public class Window extends javax.swing.JFrame {
             tabbedPane.remove(sel);
 
             if (!text.isTemporary()) {
-                filePx.remove(text.getFile().getAbsolutePath());
+                filePosition.remove(text.getFile().getAbsolutePath());
                 for (PluginInterface p : Window.w.plugns) {
                     p.fileClosed(text.getFile());
                 }
