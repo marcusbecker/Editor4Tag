@@ -71,6 +71,10 @@ public class ConfigUtil {
     public static String load(String key) {
         return props.getProperty(key);
     }
+    
+    public static String load(String key, String defVal) {
+        return props.getProperty(key, defVal);
+    }    
 
     public static String[] loadList(String key) {
         String[] arr = new String[0];

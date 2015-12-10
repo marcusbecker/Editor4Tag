@@ -5,9 +5,14 @@
  */
 package br.com.mvbos.etag.core;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.OutputStreamWriter;
+import java.io.UnsupportedEncodingException;
 import java.nio.file.Files;
 import java.util.HashMap;
 import java.util.Map;
@@ -25,23 +30,19 @@ public class FileUtil {
 
     //private static boolean externalChangeNotified;
     //private static long lastModified;
-    private static Map<File, Long> map = new HashMap<>(10);
+    private static final Map<File, Long> map = new HashMap<>(10);
 
     public synchronized static String read(File file) {
-        //selected = file;
 
         StringBuilder sb = new StringBuilder(500);
-        try {
-            Scanner sc = new Scanner(file);
+
+        try (Scanner sc = new Scanner(file, ConfigUtil.load("encode", "UTF-8"))) {
             while (sc.hasNextLine()) {
                 sb.append(sc.nextLine());
-                //sb.append(System.lineSeparator());
                 sb.append('\n');
             }
 
             map.put(file, Files.getLastModifiedTime(file.toPath()).toMillis());
-
-            sc.close();
 
         } catch (Exception e) {
             Logger.getLogger(FileUtil.class.getName()).log(Level.SEVERE, null, e);
@@ -55,15 +56,19 @@ public class FileUtil {
     }
 
     public synchronized static boolean save(String text, File file) {
+
         try {
-            FileWriter fw = new FileWriter(file);
-            fw.write(text);
-            fw.close();
+            BufferedWriter out = new BufferedWriter(new OutputStreamWriter(new FileOutputStream(file), ConfigUtil.load("encode", "UTF-8")));
+
+            out.write(text);
+            out.close();
 
             map.put(file, Files.getLastModifiedTime(file.toPath()).toMillis());
 
             return true;
 
+        } catch (FileNotFoundException | UnsupportedEncodingException ex) {
+            Logger.getLogger(FileUtil.class.getName()).log(Level.SEVERE, null, ex);
         } catch (IOException ex) {
             Logger.getLogger(FileUtil.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -78,7 +83,9 @@ public class FileUtil {
             long fTime = Files.getLastModifiedTime(selected.toPath()).toMillis();
 
             if (lastModified != fTime) {
+
                 map.put(selected, fTime);
+
                 return true;
             }
 
