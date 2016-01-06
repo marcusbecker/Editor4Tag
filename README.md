@@ -11,3 +11,6 @@ Veja mais detalhes: https://github.com/marcusbecker/Editor4Tag/wiki
 Initially developed to make easy the migration of some written texts on Word format to the Tubaina (https://github.com/caelum/tubaina).
 But, the Editor4Tag is extensible and configurable to be used with other tag types, like HTML or MarkDown.
 See more details: https://github.com/marcusbecker/Editor4Tag/wiki
+
+
+![](https://github.com/marcusbecker/Editor4Tag/blob/master/print.png)
